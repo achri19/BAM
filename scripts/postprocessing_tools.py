@@ -485,8 +485,8 @@ def run_swot_simulator(parameters,cnespath,folders,cnes_tools_path,templates_pat
 
 
 def average_swot_pixel_clouds(parameters,s_path,folders,tide_dir,simulator_dir,skip=False):
-from matplotlib.colors import TwoSlopeNorm
-import re
+    from matplotlib.colors import TwoSlopeNorm
+    import re
     if skip == False:
         delta          = parameters['AOI'][0]
         xres           = int(parameters['res'][0])                      # Original resolution (meters)
@@ -540,8 +540,8 @@ import re
                     simu_files =  [os.path.join(dirpath,f)
                           for dirpath,dirnames, files in os.walk(tide_dir)
                           for f in fnmatch.filter(files,'*%s*_%s_%s_*%s' %('SWOT_L2_HR_PIXC',cycle,passs,'pixc.shp'))]
-                    print('There are %s simulated pixel cloud files' %(len(simu_files))
-                    if len(footprint_files) == 0:
+                    print('There are %s simulated pixel cloud files' %(len(simu_files)))
+                    if len(footprint_files)==0:
                         print('There are no points in ocean superpixels in this footprint')
                     else:
                         print('Merge all simulated pixel cloud files from Cycle %s Pass %s on %s\n' %(cycle,passs,timedate))
@@ -560,7 +560,7 @@ import re
                         all_segmentations = [os.path.join(dirpath,f)
                             for dirpath,dirnames, files in os.walk(folders[7]+ 'segments/')
                             for f in fnmatch.filter(files,'*.shp')]
-                        print('Use %s segmentation files for averaging pixel cloud values' %(len(all_segmentations)
+                        print('Use %s segmentation files for averaging pixel cloud values' %(len(all_segmentations)))
                         try:
                             stats = pd.read_csv("%s/plots/cycle%s_pass%s_stats.csv" %(tide_dir,cycle,passs))
                         except:
@@ -1196,6 +1196,365 @@ def extra(test):
             plt.close()
 
 
+
+def run_CNES_hydrology_toolbox(parameters,cnespath,folders,cnes_tools_path,templates_path,resampled_path,tide_dir,orbit_type,skip):
+
+    if skip == False:
+        Path(tide_dir + '/rdf').mkdir(parents=True, exist_ok=True)
+        Path('%s/output/' %(tide_dir)).mkdir(parents=True, exist_ok=True)
+
+        print('Prepare the SWOT Simulator (CNES Hydrology Toolbox)')
+        print('SISIMP Parameter RDF are stored in specific time step folders')
+
+        delta          = parameters['AOI'][0]
+        EPSG           = int(parameters['EPSG'][0])                      # Date to start simulation
+        xres           = int(parameters['res'][0])                      # Original resolution (meters)
+
+        # tide_dirs =  [os.path.join(dirpath,f)
+        #     for dirpath,dirnames, files in os.walk('%s/Tides' %(resampled_path))
+        #     for f in fnmatch.filter(dirnames,'*2021*')]
+        #
+        # for tide_dir in tide_dirs:
+        print(tide_dir)
+
+        timedate = tide_dir.split('/')[-1]
+
+        if os.path.isfile(tide_dir + '/rdf/parameter_sisimp_%sb.rdf' %(timedate)):
+            print('swot already simulated')
+        else:
+
+            print('Make parameter for for SISIMP')
+            filein = open(templates_path+'parameter_sisimp_full.rdf')
+
+            template = Template(filein.read())
+            replacements = {'orbitpath': '%s/orbits/%s/' %(cnespath,orbit_type),#%(os.path.dirname(os.path.dirname(cnespath))),
+                            'shppath' : '%s/%s_watermask' %(resampled_path,delta),
+                            'outputpath':'%s/simu/' %(tide_dir),
+                            'true_height_file': '%s/%s_waterelev_%s_ellip.nc' %(tide_dir,delta,timedate),
+                            'SWOT_HYDROLOGY_TOOLBOX' : cnes_tools_path
+                            }
+            makeoutput = template.substitute(replacements)
+            file = open(tide_dir + '/rdf/parameter_sisimp_full_%s.rdf' %(timedate), 'w')
+            file.write(makeoutput)
+            file.close()
+
+            print('Make bash script for SISIMP')
+            filein = open(templates_path+'/newterminal.sh')
+            template = Template(filein.read())
+            replacements = {'start':  "$(conda shell.bash hook)",
+                            'environment': 'anuga_swot2',
+                            'command' : 'python %s/sisimp/proc_sisimp.py %s/rdf/parameter_sisimp_full_%s.rdf' %(cnes_tools_path,tide_dir,timedate),
+                            'SWOT_HYDROLOGY_TOOLBOX' : cnes_tools_path,
+                            'PYTHONPATH':'$PYTHONPATH',
+                            'RIVEROBS':'$RIVEROBS'
+                            }
+            print('python %s/sisimp/proc_sisimp.py %s/rdf/parameter_sisimp_full_%s.rdf' %(cnes_tools_path,tide_dir,timedate))
+            makeoutput = template.substitute(replacements)
+            file = open(tide_dir + '/runswot_%s.sh' %(timedate), 'w')
+            file.write(makeoutput)
+            file.close()
+
+            subprocess.call(['sh','%s/runswot_%s.sh' %(tide_dir,timedate)])
+
+
+
+
+
+def average_simulated_pixel_clouds(parameters,s_path,folders,tide_dir,simulator_dir,skip=False):
+    if skip == False:
+        delta          = parameters['AOI'][0]
+        xres           = int(parameters['res'][0])                      # Original resolution (meters)
+
+        timedate = tide_dir.split('/')[-1]
+        timeonly = timedate[-6:]
+        Path(tide_dir + '/plots').mkdir(parents=True, exist_ok=True)
+        Path(simulator_dir + '/segments').mkdir(parents=True, exist_ok=True)
+
+        print('Get the ANUGA water surface elevation files for %s as reference' %(timedate))
+        anuga_wse_files =  [os.path.join(dirpath,f)
+            for dirpath,dirnames, files in os.walk(simulator_dir)
+            for f in fnmatch.filter(files,'*%s*.nc' %(timedate))]
+
+        anuga_wse_ds = xr.open_dataset(anuga_wse_files[0])
+        anuga_wse_df = anuga_wse_ds.to_dataframe()
+        anuga_wse_df = anuga_wse_df.reset_index()
+        anuga_wse_gdf = gpd.GeoDataFrame(anuga_wse_df, geometry=gpd.points_from_xy(anuga_wse_df.longitude, anuga_wse_df.latitude))
+        anuga_wse_gdf = anuga_wse_gdf.set_crs(4326)
+        anuga_wse_gdf = anuga_wse_gdf.rename(columns={'height': 'elevation'})
+
+        print('Check pass plan for all orbits within the simulation window')
+        passplans = [os.path.join(dirpath,f)
+                  for dirpath,dirnames, files in os.walk(s_path +'/orbits/')
+                  for f in fnmatch.filter(files,'*pass_*.nc')]
+        cycles = [i.split('/')[-1].split('_')[-3][1:] for i in passplans]
+        cycles = np.unique(cycles)
+        print('')
+        print('Cycles covering this area are: %s' %(cycles))
+        passes = [i.split('/')[-1].split('_')[-1][1:-3] for i in passplans]
+        print('Pass covering this area are: %s' %(passes))
+        print('Loop through each cycle')
+        for cycle in cycles:
+            print()
+            print('Cycle: %s' %(cycle))
+            print('Loop through each pass')
+            print()
+            for passs in passes:
+                print('Orbit: ', passs)
+                print('Timestamp: ', timedate)
+                side = 'LR'
+                print('Use the footprint files for each cycle/pass to clip for segmentation\n')
+
+
+                if 'CNES' in simulator_dir:
+                    print('Use the footprint files for each cycle/pass to clip for segmentation\n')
+                    footprint_files =  [os.path.join(dirpath,f)
+                        for dirpath,dirnames, files in os.walk(tide_dir)
+                        for f in fnmatch.filter(files,'*%s*%s*%s*%s' %('footprint',cycle,passs,'.shp'))]
+
+                    if len(footprint_files)>0:
+                        footprint = pd.concat([gpd.read_file(shp) for shp in footprint_files])
+                        footprint = footprint.reset_index(drop=True)
+                        footprint['dis'] = 1
+                        footprint = footprint.dissolve(by='dis')
+
+                        simu_files =  [os.path.join(dirpath,f)
+                              for dirpath,dirnames, files in os.walk(tide_dir)
+                              for f in fnmatch.filter(files,'*%s*_%s_%s_*%s' %('SWOT_L2_HR_PIXC',cycle,passs,'pixc.shp'))]
+                        print('There are %s simulated pixel cloud files' %(len(simu_files)))
+                        if len(footprint_files) == 0:
+                            print('There are no points in ocean superpixels in this footprint')
+                        else:
+                            print('Merge all simulated pixel cloud files from Cycle %s Pass %s on %s\n' %(cycle,passs,timedate))
+                            try:
+                                pixel_cloud = gpd.read_file("%s/simu/cycle%s_pass%s_%s_merged.shp" %(tide_dir,cycle,passs,timedate))
+                            except:
+                                pixel_cloud = pd.concat([gpd.read_file(shp) for shp in simu_files])
+                                pixel_cloud.to_file("%s/simu/cycle%s_pass%s_%s_merged.shp" %(tide_dir,cycle,passs,timedate))
+
+                            print('Remove any points not classified as water (#4)')
+                            pixel_cloud = pixel_cloud[pixel_cloud['classif']==4]
+
+                            print('Calculate new attribute: wse x pixel area')
+                            pixel_cloud['heightarea'] = pixel_cloud['height']*pixel_cloud['pix_area']
+
+
+                elif 'Damien' in simulator_dir:
+                            water_footprint_files =  [os.path.join(dirpath,f)
+                                for dirpath,dirnames, files in os.walk(cnespath)
+                                for f in fnmatch.filter(files,'cycle0%s_pass0%s_watermask.shp' %(cycle,passs))]
+                            print('Use the footprint files for each cycle/pass to clip for segmentation\n')
+                            try:
+                                footprint = gpd.read_file(water_footprint_files[0])
+                            except:
+                                print('no water mask footprint')
+                            else:
+                                footprint['dis'] = 1
+                                footprint = footprint.dissolve(by='dis')
+                                footprint = footprint.reset_index(drop=True)
+
+                                simu_folders =  [os.path.join(dirpath,f)
+                                      for dirpath,dirnames, files in os.walk(damien_dir)
+                                      for f in fnmatch.filter(dirnames,'cycle_%s_pass_%s*' %(str(cycle).zfill(4),str(passs).zfill(4)))]
+                                print('There are %s cycle-%s pass-%s folders' %(len(simu_folders),cycle,passs))
+                                for simu_folder in simu_folders:
+                                    nc_files =  [os.path.join(dirpath,f)
+                                      for dirpath,dirnames, files in os.walk(simu_folder)
+                                      for f in fnmatch.filter(files,'pixel_cloud.nc')]
+                                    print('There are %s pixel cloud nc files in %s' %(len(nc_files),simu_folder.split('/')[-1]))
+
+                                    if len(nc_files)>0:
+                                        for nc_file in nc_files:
+                                            cyclepassframe = nc_file.split('/')[-5]
+                                            if os.path.isfile('%s/output/simu/%s_pixel_cloud_%s.shp' %(damien_dir,cyclepassframe,timedate))==False:
+                                                print('Convert nc to shp')
+                                                jpl_ds = nc.Dataset(nc_file)
+
+                                                pixel_cloud = jpl_ds.groups['pixel_cloud']
+                                                lats = pixel_cloud['latitude'][:].data
+                                                lons = pixel_cloud['longitude'][:].data
+                                                hts = pixel_cloud['height'][:].data
+                                                classifs = pixel_cloud['classification'][:].data
+                                                pix_area = pixel_cloud['pixel_area'][:].data
+                                                incid = pixel_cloud['inc'][:].data
+
+                                                jpl_hts = pd.DataFrame({"Latitude" : lats, "Longitude" : lons, "height" : hts,'classif':classifs,'pix_area':pix_area,'incid':incid})
+                                                jpl_hts.to_csv('%s/output/simu/%s_pixel_cloud_%s.csv' %(damien_dir,cyclepassframe,timedate), index=False)
+
+                                                jpl_pixel_cloud = gpd.GeoDataFrame(jpl_hts, geometry=gpd.points_from_xy(jpl_hts.Longitude, jpl_hts.Latitude))
+                                                jpl_pixel_cloud = jpl_pixel_cloud.set_crs(4326)
+                                                jpl_pixel_cloud.to_file('%s/output/simu/%s_pixel_cloud_%s.shp' %(damien_dir,cyclepassframe,timedate))
+
+                                simu_files = [os.path.join(dirpath,f)
+                                      for dirpath,dirnames, files in os.walk(damien_dir+'/output/simu/')
+                                      for f in fnmatch.filter(files,'cycle_%s_pass_%s*pixel_cloud_%s.shp' %(str(cycle).zfill(4),str(passs).zfill(4),timedate))]
+                                print('Now there are %s pixel cloud shapefiles for cycle-%s pass-%s' %(len(simu_files), cycle, passs))
+                                print()
+
+                                if len(simu_files)>0:
+                                    print('Merge all tiles within cycle and pass into one pixel cloud')
+                                    try:
+                                        pixel_cloud = gpd.read_file("%s/output/simu/%s-Cycle_%s_Pass_%s_merged.shp" %(damien_dir,cycle,passs,timedate))
+                                    except:
+                                        print('Processing all SWOT points from Cycle %s Pass %s on %s\n' %(cycle,passs,timedate))
+                                        pixel_cloud = pd.concat([gpd.read_file(shp) for shp in simu_files])
+                                        pixel_cloud.to_file("%s/output/simu/%s-Cycle_%s_Pass_%s_merged.shp" %(damien_dir,cycle,passs,timedate))
+
+                                    print('Remove any points not classified as water (#4)')
+                                    pixel_cloud = pixel_cloud[pixel_cloud['classif']==4]
+
+                                    print('Calculate new attribute: wse x pixel area')
+                                    pixel_cloud['heightarea'] = pixel_cloud['height']*pixel_cloud['pix_area']
+                all_segmentations = [os.path.join(dirpath,f)
+                    for dirpath,dirnames, files in os.walk(folders[7]+ 'segments/')
+                    for f in fnmatch.filter(files,'*.shp')]
+                print('Use %s segmentation files for averaging pixel cloud values' %(len(all_segmentations)))
+                try:
+                    stats = pd.read_csv("%s/plots/cycle%s_pass%s_stats.csv" %(tide_dir,cycle,passs))
+                except:
+                    stats = pd.DataFrame(np.zeros((len(all_segmentations),6)),dtype="string",columns={'name','min','max','mean','stdev','rmse'})
+                s=0 ## index for stats array
+                for segmentation_file in all_segmentations[:]:
+                    segmentation = segmentation_file.split('/')[-1][:-4]
+                    print('************** Segmentation: %s' %(segmentation))
+                    type = segmentation.split('_')[1]
+                    print('************** Type: %s\n' %(type))
+                    ## If this is the first time step, then we need to open the original segmentation file
+                    if os.path.isfile('%s/segments/%s_%s_%s.shp' %(simulator_dir,cycle,passs,segmentation))==False:
+                        segments = gpd.read_file(segmentation_file)
+                        ## Remove segments #0 which are over land
+                        segments = segments[segments['DN']!=0]
+                        ## Reproject to EPSG _4326
+                        segments = segments.to_crs(4326)#footprint.crs)
+                        ## Clip the segments to the water mask and foot print of this orbit
+                        segments_clipped = gpd.clip(segments,footprint) #gpd.overlay(segments,footprint,how='intersection')
+                        segments_clipped = segments_clipped.reset_index(drop=True)
+                        segments_clipped = segments_clipped[segments_clipped['DN']!=0]
+                        ## Set index as DN2 - this will be used for merging dataframes later
+                        segments_clipped['DN2'] = segments_clipped.index
+
+                    ## If this isn't the first time step, then the segment file already has some results in it. Open it
+                    else:
+                        segments_clipped = gpd.read_file('%s/segments/%s_%s_%s.shp' %(simulator_dir,cycle,passs,segmentation))# + simu[len(cnespath) +12:-4] + '_superpixels.shp')
+                        print('Segmentation already processed')
+
+                    if 'AN%s' %(timeonly) not in segments_clipped.columns:
+                        print('We will add new columns for this time step')
+                        ## Remove extra attributes that we don't need
+                        try:
+                            pixel_cloud = pixel_cloud.drop(['az_index','classif','r_index','water_frac','lat','long','cr_track','phi_std','dlat_dph','dlon_dph','dh_dphi','sigma0'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',
+                        except:''
+                        ## Join the pixel cloud data to the clipped segments
+                        pixc_segments = gpd.tools.sjoin(pixel_cloud,segments_clipped,how='inner')
+
+                        if len(pixc_segments) ==0:
+                            print('There are no points in ocean superpixels in this footprint')
+                        else:
+                            print('There are %s points in ocean %s superpixels in this footprint' %(len(pixc_segments),len(segments_clipped)))
+                            print('Group pixel clouds by the segment they are in')
+                            pixc_segments = pixc_segments.groupby('DN2')
+
+                            print('Get mean of pixel cloud wse within each segment')
+                            segment_pixc_means = pixc_segments.mean()
+                            import re
+                            remove_list = re.compile(".*0000")
+                            segment_pixc_means = segment_pixc_means.drop(list(filter(remove_list.match, segment_pixc_means.columns)),axis=1)## Rename to height column to 'ht' + time step
+                            ## Rename to height column to 'ht' + time step
+                            segment_pixc_means = segment_pixc_means.rename(columns={'height': 'ht%s' %(timeonly)})
+                            ## Rename to incid column to 'in' + time step
+                            segment_pixc_means = segment_pixc_means.rename(columns={'incid': 'in%s' %(timeonly)})
+                            ## Clean up the extra columns
+                            #segment_pixc_means = segment_pixc_means.drop(['DN','index_right','classif','pix_area','heightarea','Latitude','Longitude'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',\
+                            #segment_pixc_means = segment_pixc_means.drop(['DN','az_index','classif','pix_area','r_index','heightarea','water_frac','lat','long','cr_track','phi_std','dlat_dph','dlon_dph','dh_dphi','sigma0','index_right'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',
+                            segment_pixc_means = segment_pixc_means.drop(['DN','index_right','heightarea','pix_area'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',
+                            #print(segment_pixc_means.columns)
+
+                            print('Get sum of pixel cloud wse x area within each segment')
+                            segment_pixc_sums = pixc_segments.sum()
+                            remove_list = re.compile(".*0000")
+                            segment_pixc_sums = segment_pixc_sums.drop(list(filter(remove_list.match, segment_pixc_sums.columns)),axis=1)## Rename to height column to 'ht' + time step
+                            ## Calculate the weighted height as the sum(heightarea) / sum(pixel_area)
+                            segment_pixc_sums['wt%s' %(timeonly)] = segment_pixc_sums['heightarea']/segment_pixc_sums['pix_area']
+                            ## Clean up the extra columns
+                            #segment_pixc_sums = segment_pixc_sums.drop(['DN','index_right','classif','pix_area','height','heightarea','Latitude','Longitude'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',\
+                            #segment_pixc_sums = segment_pixc_sums.drop(['DN','az_index','classif','pix_area','r_index','water_frac','lat','long','cr_track','phi_std','dlat_dph','dlon_dph','dh_dphi','sigma0','index_right'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',\
+                            segment_pixc_sums = segment_pixc_sums.drop(['DN','index_right','heightarea','pix_area'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',
+                            try:
+                                segment_pixc_sums = segment_pixc_sums.drop(['incid'],axis=1)#['az_index','r_index','lat','long','DN','index_right','classif', 'pix_area', 'water_frac', 'height', 'cr_track', 'phi_std',\
+                            except:''
+                            #print(segment_pixc_sums.columns)
+
+                            print('Get ANUGA reference wse in each segment segment')
+                            anuga_segments = gpd.tools.sjoin(anuga_wse_gdf,segments_clipped,how='inner')
+                            ## Clean extra columns
+                            anuga_segments = anuga_segments.drop(['DN','latitude','longitude','index_right','record'],axis=1)
+                            remove_list = re.compile(".*0000")
+                            anuga_segments = anuga_segments.drop(list(filter(remove_list.match, anuga_segments.columns)),axis=1)
+                            ## Group by segment ID
+                            anuga_segments = anuga_segments.groupby('DN2')
+                            print('Get the mean of ANUGA WSE values for each segment')
+                            segment_anuga_means = anuga_segments.mean()
+                            ## Rename the ANUGA elevation WSE column as 'AN' + timestep
+                            segment_anuga_means = segment_anuga_means.rename(columns={'elevation': 'AN%s' %(timeonly)})
+                            print(segment_anuga_means.columns)
+                            print('Combine simulated and reference means to one dataframe')
+                            ## Merge segments clipped with anuga means
+                            segment_final = segments_clipped.merge(segment_anuga_means,on='DN2')
+                            ## Merge with simulator means
+                            segment_final = segment_final.merge(segment_pixc_means,on='DN2')
+                            ## Merge wtih simulator sums
+                            segment_final = segment_final.merge(segment_pixc_sums,on='DN2')
+                            segment_final = segment_final.drop(['spatial_ref'],axis=1)
+
+                            print('Calculate difference (ref - simulated) = ANUGA - SWOT simulated')
+                            segment_final['er%s' %(timeonly)] = segment_final['AN%s' %(timeonly)] - segment_final['ht%s' %(timeonly)]
+                            print('Calculate weighted difference (ref - simulated) = ANUGA - weighted SWOT simulated')
+                            segment_final['we%s'  %(timeonly)] = segment_final['AN%s' %(timeonly)] - segment_final['wt%s' %(timeonly)]
+                            print(segment_final.columns)
+                            remove_list = re.compile(".*height")
+                            segment_final = segment_final.drop(list(filter(remove_list.match, segment_final.columns)),axis=1)
+                            segment_final.to_file('%s/segments/%s_%s_%s.shp' %(simulator_dir,cycle,passs,segmentation))# + simu[len(cnespath) +12:-4] + '_superpixels.shp')
+
+
+                    try:
+                        segment_final = gpd.read_file('%s/segments/%s_%s_%s.shp' %(simulator_dir,cycle,passs,segmentation))
+                    except:''
+                    else:
+                        print('Calculate stats, make plots, and histogram')
+                        fig, [ax1,ax2] = plt.subplots(nrows=2,figsize=(30, 20))
+                        ax1.set_title('SWOT Height Error (m) for %s%s %s from %s' %(passs,side,timedate,segmentation))
+
+                        norm = TwoSlopeNorm(vmin=-.1,vmax=.1,vcenter=0)
+                        cmap = 'PiYG'
+                        cbar = plt.cm.ScalarMappable(norm=norm,cmap=cmap)
+                        segment_final.plot(column='we%s' %(timeonly),cmap = cmap,norm=norm,legend=False,edgecolor='black',linewidth=0.1,ax=ax1)
+                        fig.colorbar(cbar,ax=ax1)
+                        plt.tight_layout()
+
+                        rmse = mean_squared_error(segment_final['AN%s' %(timeonly)], segment_final['wt%s' %(timeonly)], squared=False)
+                        mean = (np.nanmean(segment_final['we%s'  %(timeonly)]))
+                        stdev = (np.nanstd(segment_final['we%s'  %(timeonly)]))
+                        min = (np.nanmin(segment_final['we%s'  %(timeonly)]))
+                        max = (np.nanmax(segment_final['we%s'  %(timeonly)]))
+                        stats['name'].loc[s] = segmentation_file
+                        stats['mean'].loc[s] = str(mean)
+                        stats['stdev'].loc[s] = str(stdev)
+                        stats['min'].loc[s] = str(min)
+                        stats['max'].loc[s] = str(max)
+                        stats['rmse'].loc[s] = str(rmse)
+                        print('RMSE = %sm' %(str(rmse)))
+
+                        sns.histplot(segment_final['we%s'  %(timeonly)],bins=100,alpha=0.3,color='blue',ax=ax2)
+                        ax2.set_xlim(-stdev,stdev)
+                        ax2.text(0.8,0.8,'\n # Segments: %s\n Std Dev: %sm\n RMSE: %sm\n Mean: %sm\n' %(len(segment_final),round(stdev,4),round(rmse,4), round(mean,4)),ha='center', va='center',fontsize=40, transform=ax2.transAxes)
+                        ax2.set_xlabel('Simulated SWOT Height Error (m)')
+                        ax2.set_ylabel('# of Segments')
+
+                        ## Save figure
+                        plt.savefig("%s/plots/Superpixel_SimulatedHeightError_cycle%s_pass%s_%s_%s.png" %(tide_dir,cycle,passs,timedate,segmentation))
+                    ## Save stats
+                    stats.to_csv("%s/plots/cycle%s_pass%s_stats.csv" %(tide_dir,cycle,passs),float_format='%.6f')
+                    plt.close()
+                    s=s+1
 
 
 # if os.path.isfile(waterelev_wgs)==False:

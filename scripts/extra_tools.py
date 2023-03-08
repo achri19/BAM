@@ -160,8 +160,8 @@ def make_segments_for_swot(folders,delta,ref,parameters,skip):#,min_size,scale):
         #print('##################### # Slic segments will be %s' %(n_slic_segments))
 
         cmap = matplotlib.colors.ListedColormap ( np.random.rand ( 256,3))
-        ix = [0.0001,0.005,1]#compactness
-        seg_size = [50000,100000,1000000,10000000]
+        ix = [0.0001,0.001,0.005,1]#compactness
+        seg_size = [5000,10000,100000,1000000]
         jx = [int(dx*dx*total_pixels/x) for x in seg_size]#to make segments of size 0.5ha, 1ha, 10ha, and 100ha
         #jx = [10,100,1000,10000]#number of segments
 
@@ -191,9 +191,9 @@ def make_segments_for_swot(folders,delta,ref,parameters,skip):#,min_size,scale):
         plt.tight_layout()
         plt.savefig('%s%s_Segments_Ocean_slic.png' %(segments_dir,delta))
 
-        ix = [0.1,1000]#[0.1,10,1000] #scale = Free parameter. Higher means larger clusters.
+        ix = [0.1,10000,20000]#[0.1,10,1000] #scale = Free parameter. Higher means larger clusters.
         jx = [0.1,0.95] #sigma = Width (standard deviation) of Gaussian kernel used in preprocessing.
-        seg_size = [1000,10000,100000,1000000] # to make segments of minimum size 0.1ha, 1ha, 10ha, 100ha
+        seg_size = [5000,10000,100000,1000000] # to make segments of minimum size 0.1ha, 1ha, 10ha, 100ha
         zx = [int(x/(dx*dy)) for x in seg_size]
         #zx = [1,10,100] #minsize = Minimum component size. Enforced using postprocessing.
         print('Felzenswalb segmentation:')
@@ -203,10 +203,10 @@ def make_segments_for_swot(folders,delta,ref,parameters,skip):#,min_size,scale):
 
         for i in range(0,len(ix)):
             fig,axes = plt.subplots(ncols=len(zx),nrows=len(jx),figsize=(20,20))
+            scale = ix[i]
             for j in range(0,len(jx)):
+                sigma = jx[j]
                 for z in range(0,len(zx)):
-                        scale = ix[i]
-                        sigma = jx[j]
                         min_size = zx[z]
                         if os.path.isfile('%s%s_oceandem_superpixels_%sm2_scale%s_sigma%s_min%s_felz.shp' %(segments_dir,delta,seg_size[z],scale,sigma,min_size))==False:
                             print('Scale: %s     Sigma: %s     Min Size: %s' %(scale, sigma, min_size))
@@ -226,7 +226,7 @@ def make_segments_for_swot(folders,delta,ref,parameters,skip):#,min_size,scale):
                         axes[j,z].imshow(superpixel_labels_f,cmap=cmap)
 
             plt.tight_layout()
-            plt.savefig('%s%s_Segments_Ocean_felz_%s.png' %(segments_dir,delta,sigma))
+            plt.savefig('%s%s_Segments_Ocean_felz_%s.png' %(segments_dir,delta,scale))
 
         print('[Step %s][Making river segments using Orinoco] ......'%(step))
         px = [2,4,6,8]

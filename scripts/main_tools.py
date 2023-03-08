@@ -5,90 +5,90 @@
 These tools are the main functions for building the ANUGA models
 Author: Alexandra Christensen
 Created: Thu Jul 23 07:55:18 2020
-Updated: 12/01/2022
+Updated: March 7, 2023
 
 """
 
 ##############################################################################
-
+##############################################################################
+##############################################################################
+import os
 import subprocess
+import sys
+
 import rasterio
 from osgeo import gdal, ogr
 from rasterio._fill import _fillnodata
 import numpy as np
-import os
-from shapely.geometry import Polygon, LineString
-#from shapely.ops import cascaded_union
-#from shapely.ops import polygonize, unary_union
-#from shapely.validation import make_valid
-
+from shapely.geometry import Polygon
 import geopandas as gpd
+import pandas as pd; pd.options.mode.chained_assignment = None
+from rasterstats import zonal_stats
+import scipy
+from scipy import ndimage
+
 import warnings; warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)
 import math
 from string import Template
-import pandas as pd
-pd.options.mode.chained_assignment = None
-from rasterstats import zonal_stats
-
 import fnmatch
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredSizeBar)
-from scipy import ndimage
-import scipy
-import warnings
-
-#from terracatalogueclient import Catalogue
-from skimage.segmentation import felzenszwalb, slic
-from skimage.color import label2rgb
 import requests
 from tqdm.auto import tqdm  # provides a progressbar
 
-import sys
 if os.getcwd().split('/')[1] == 'Users':
     code_path = '/users/alchrist/documents/github/ANUGA/processing/code/'
 else:
     code_path = '/projects/loac_hydro/alchrist/processing/code'
 sys.path.insert(1, code_path)
-from polygon_tools import findconnectedwater, get_nearest, nearest_neighbor, getpolygonpoints, removenearbypoints, delete_holes
+from polygon_tools import findconnectedwater
 from download_tools import download_NASADEM2
 from orinoco_tools import make_distance
 from tide_tools import maketides
+##############################################################################
+##############################################################################
+##############################################################################
 
-############################################################################
-############################################################################
-############################################################################
-############################################################################
-## PART I
-## INPUT: Delta name
-## OUTPUT: Working directory
-##########################################################################
 
 def build_directory(path, delta):
+    
     '''
+    ############################################################################
+    ############################################################################
+    Info: Build the working directory for this AOI
+    ############################################################################
+    ############################################################################
+
     Parameters
     ----------
     path : string
         root directory of files (inputs and GEE watermasks).
     delta : string
         AOI.
+
+    Returns
+    -------
+    working_dir : string
+        path where files will be saved
+    folders : LIST
+        list of folders within working directory
     '''
+    step = '1'
     print('\n\n\n##############################################################################################')
-    print('################################[Step 1][Build Directory]#####################################')
+    print('################################[Step %s][Build Directory]#####################################' %(step))
     print('##############################################################################################\n')
-
-
     try:
-        deltapath = [os.path.join(dirpath,f)
+        working_dir = [os.path.join(dirpath,f)
                 for dirpath,dirnames, files in os.walk(path)
                 for f in fnmatch.filter(dirnames,'%s' %(delta))][0] +'/'
     except:
-        deltapath = input('The directory %s does not exist, what is the working directory:') + '/'
+        working_dir = input('The directory %s does not exist, what is the working directory:') + '/'
     else:
-        print('##################### The working directory set as: \n\n%s\n ' %(deltapath))
+        print('##################### The working directory set as: \n\n%s\n ' %(working_dir))
 
     ## Build model directory
-    tier1_folders = [deltapath + x for x in ['User_Defined_Files/','tmp/','Setup_Files/','Meshes/','DEMs/','Boundaries','Simulations/']]
+    tier1_folders = [working_dir + x for x in ['User_Defined_Files/','tmp/','Setup_Files/','Meshes/','DEMs/','Boundaries','Simulations/']]
     setup_path = tier1_folders[2]
     tier2_folders = [setup_path + x for x in['Setup_SHP/','Setup_RST/','Setup_FIG/']]
     folders = tier1_folders + tier2_folders
@@ -108,18 +108,16 @@ def build_directory(path, delta):
         except: ''
 
     print('\n[Step 1][Build Directory] Finished .......\n')
-    return deltapath,folders
+    return working_dir,folders
 
-############################################################################
-############################################################################
-############################################################################
-############################################################################
-## PART II
-## INPUT: Delta name, working directory, folders
-## OUTPUT: extent, bathymetry, topography, hydropolys, landcover, ndwi watermask
-##########################################################################
+
 def get_extent_parameters(path,delta,folders,xres,parameters):
     '''
+    ############################################################################
+    ############################################################################
+    Info: Get the domain extent, the EPSG UTM coordinate systems, and build reference GEBCO file
+    ############################################################################
+    ############################################################################
     Parameters
     ----------
     path : string
@@ -128,23 +126,33 @@ def get_extent_parameters(path,delta,folders,xres,parameters):
         AOI name, must match input shapefile and folder.
     folders : np.array of strings
         folders within deltapath for model files.
+    xres : integer
+        x and y resolution in meters (they must be the same)
     parameters : pd.dataframe
         Configuration parameters for model setup.
+
+    Returns
+    -------
+    ref_10m : np.array
+        reference array for sizing all future rasters
+    parameters : pd.dataframe
+        Updated configuration parameters for model setup.
+
+
     '''
+    step = '1b'
     print('\n\n\n##############################################################################################')
-    print('#################################[Step 2][Setup_AOI_Files]####################################')
+    print('##############################[Step %s][GetExtentParameters]##################################' %(step))
     print('##############################################################################################\n')
     ##############################################################################
     ############################## Get config file ###############################
     ######################## Set configuration parameters ########################
     ##############################################################################
     # Set model resolution, set methods for building DEM of land and ocean, and set method for land cover classification
-    #yres, xres = res,res
     ref_res = 10
     landmethod      = parameters['LandElevMethod'][0]                # File or method used for land topography
     oceanmethod     = parameters['OceanElevMethod'][0]               # File or method used for ocean bathymetry
     landcovermethod = parameters['LandcoverMethod'][0]               # File or method used for landcover classification
-
     input_path = path
     ##############################################################################
     ###################### Get Extent and Coordinate System ######################
@@ -166,13 +174,11 @@ def get_extent_parameters(path,delta,folders,xres,parameters):
         print("The input shapefile is not in the correction projection (EPSG 4326), reprojecting to EPSG 4326")
         AOI = AOI.to_crs(4326)
 
-
     ## Total bounding coordinates in WGS84 coordinates
     ulx_wgs,lry_wgs,lrx_wgs,uly_wgs = AOI.total_bounds
 
     ## Determine the UTM coordinate system
     ## ANUGA models are assumed in UTM
-
     # identify north/south and east/west coordiantes
     x1,y1,x2,y2 = math.floor(ulx_wgs),math.floor(uly_wgs),math.floor(lrx_wgs),math.floor(lry_wgs)
 
@@ -261,8 +267,14 @@ def get_extent_parameters(path,delta,folders,xres,parameters):
     print('##################### Saved as %s%s_Configuration.csv' %(folders[2].split(delta)[-1],delta))
     return ref_10m,parameters
 
+
 def setup_AOI_files(path,delta,folders,xres,parameters):
     '''
+    ############################################################################
+    ############################################################################
+    Info: Setup Download datasets of ocean bathy, land topo, and landcover
+    ############################################################################
+    ############################################################################
     Parameters
     ----------
     path : string
@@ -271,11 +283,18 @@ def setup_AOI_files(path,delta,folders,xres,parameters):
         AOI name, must match input shapefile and folder.
     folders : np.array of strings
         folders within deltapath for model files.
+    xres : integer
+        x and y resolution in meters (must be the same)
     parameters : pd.dataframe
         Configuration parameters for model setup.
+
+    Returns
+    -------
+    ref : np.array of float
     '''
+    step = '2'
     print('\n\n\n##############################################################################################')
-    print('#################################[Step 2][Setup_AOI_Files]####################################')
+    print('#################################[Step %s][Setup_AOI_Files]####################################' %(step))
     print('##############################################################################################\n')
 
     EPSG = parameters['EPSG'][0]                                                # Coordinate System must be UTM
@@ -553,14 +572,14 @@ def setup_AOI_files(path,delta,folders,xres,parameters):
 
     return ref
 
-############################################################################
-############################################################################
-############################################################################
-## PART IIIa
-## OUTPUT: landcover, water types, DEM
-##########################################################################
+
 def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landcover,skip=False):
     '''
+    ############################################################################
+    ############################################################################
+    Info: Make water mask using ndwi water masks from GEE
+    ############################################################################
+    ############################################################################
     Parameters
     ----------
     delta : string
@@ -571,14 +590,17 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
         Configuration parameters for model setup.
     ref : open DatasetReader (rasterio)
         The reference file used to detemine resolution, width, height, extent of all rasters
-    watermaskname : string
-        Name of the best water mask from GEE
     skip : boolean
         If True, do not build water polygons.
-    '''
+    Returns
+    -------
+    watermaskname : string
+        Name of the best water mask from GEE
 
+    '''
+    step = '3a'
     print('\n\n\n##############################################################################################')
-    print('#################################[Step 3A][Make_Watermask]####################################')
+    print('#################################[Step %s][Make_Watermask]####################################' %(step))
     print('##############################################################################################\n')
     save_profile_xres = ref.profile
     save_profile_xres['compress'] = 'deflate'
@@ -596,23 +618,22 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
     ##################### Get best watermask from GEE ############################
     ##############################################################################
     print('\n[Step 2][Setup_AOI_Files][Compiling Water Masks] .......\n')
-    # gee_ndwi_path = path + 'GEE_NDWI_watermask' #'/Volumes/GoogleDrive/My Drive/GEE_drive/'
-    # gee = [os.path.join(dirpath,f)
-    #     for dirpath,dirnames, files in os.walk(gee_ndwi_path)
-    #     for f in fnmatch.filter(files,'%s*' %(delta))]
-    # if len(gee)<=0:
-    #     print('There are no GEE watermasks')
     gee = [os.path.join(dirpath,f)
         for dirpath,dirnames, files in os.walk(folders[0])
         for f in fnmatch.filter(files,'%s*_finalwatermask.tif' %(delta))]
 
         #user_input = input('Did you put it there? If yes, we can proceed if you enter "y". If not, the remaining code will fail ')
     watermaskname = gee[0].split('/')[-1].split('.')[0].split('-')[0]
-
+    def fix_connectivity(structure,input_mask,origin):
+            full_watermask2 = ndimage.morphology.binary_hit_or_miss(input_mask, structure1 = structure.astype(input_mask.dtype),origin1 =origin)
+            full_watermask3 = np.where(full_watermask2==True,1,0)
+            full_watermask = input_mask + full_watermask3
+            # structure_flip = np.flip(structure,flip_dir)
+            full_watermask = np.where(full_watermask>0,1.,0.)
+            return full_watermask
     if skip==False:
-
         print('##################### Google Earth Engine water mask file : %s.tif' %(watermaskname))
-        if os.path.isfile('%s%s_10b.tif' %(folders[8],watermaskname))==False:
+        if os.path.isfile('%s%s_10.tif' %(folders[8],watermaskname))==False:
             with open("%sgee_ndwi_files.txt" %(folders[1]), 'w') as f:
                 for item in gee:
                     f.write("%s\n" % item)
@@ -622,17 +643,6 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
             os.system('gdalwarp -overwrite -tr %s %s %s%s.vrt %s%s_10.tif -s_srs EPSG:4326 -t_srs EPSG:%s -te %s %s %s %s '\
                       '-srcnodata -9999 -dstnodata -9999 -co COMPRESS=DEFLATE'
                       %(10,10, folders[1],watermaskname,folders[8],watermaskname,EPSG,ulx,lry,lrx,uly))
-
-
-
-        def fix_connectivity(structure,input_mask,origin):
-            full_watermask2 = ndimage.morphology.binary_hit_or_miss(input_mask, structure1 = structure.astype(input_mask.dtype),origin1 =origin)
-            full_watermask3 = np.where(full_watermask2==True,1,0)
-            full_watermask = input_mask + full_watermask3
-            # structure_flip = np.flip(structure,flip_dir)
-            full_watermask = np.where(full_watermask>0,1.,0.)
-            return full_watermask
-
         ###########################################################################
         ########################## Import Hydropolys ##############################
         ###########################################################################
@@ -651,50 +661,29 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
             hydropoly = gpd.overlay(hydropoly,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
             hydropoly.to_file("%s%s_hydropolys.shp" %(folders[0],delta))            # Save
 
-        print('\n[Step 3A][Make_Watermask][Load SWOT PLD lakes] .......\n')
-        try: thelake = gpd.read_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
-        except:
-            print('##################### Extracting SWOT PLD Lakes for the AOI')
-            try:
-                plds = gpd.read_file('%sSWOT_PLD.gdb/SWOT_PLD.shp' %(path_ancillary))
-            except:''
-            else:
-                hydrolakes_crs = plds.crs
-                extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
-                extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
-                thelake = gpd.clip(plds,extentpoly2)                            # Clip HydroLakes to model domain extent
-                thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
-                if len(thelake) == 0:
-                    print('There are no lakes in the model domain')
-                    d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
-                    thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
-                else:
-                    thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
-                    thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
-                thelake.to_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
-
-        # print('\n[Step 3A][Make_Watermask][Load HydroLAKES] .......\n')
-        # try: thelake = gpd.read_file("%s%s_HydroLAKES.shp" %(folders[0],delta))
+        # print('\n[Step 3A][Make_Watermask][Load SWOT PLD lakes] .......\n')
+        # try: thelake = gpd.read_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
         # except:
-        #     hydrolakes = gpd.read_file(path_ancillary + '/HydroSheds/HydroLAKES_polys_v10_shp/HydroLAKES_polys_v10_fixed.shp')
-        #     hydrolakes_crs = hydrolakes.crs
-        #     extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
-        #     extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
-        #     thelake = gpd.clip(hydrolakes,extentpoly2)                            # Clip HydroLakes to model domain extent
-        #     thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
-        #     if len(thelake) == 0:
-        #         print('There are no lakes in the model domain')
-        #         d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
-        #         thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
+        #     print('##################### Extracting SWOT PLD Lakes for the AOI')
+        #     try:
+        #         plds = gpd.read_file('%sSWOT_PLD.gdb/SWOT_PLD.shp' %(path_ancillary))
+        #     except:''
         #     else:
-        #         thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
-        #         thelake.geometry = thelake.buffer(50)                               # Extra buffer to account low precision of hydrolakes
-        #         thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
-        #     thelake.to_file("%s%s_HydroLAKES.shp" %(folders[0],delta))
+        #         hydrolakes_crs = plds.crs
+        #         extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
+        #         extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
+        #         thelake = gpd.clip(plds,extentpoly2)                            # Clip HydroLakes to model domain extent
+        #         thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
+        #         if len(thelake) == 0:
+        #             print('There are no lakes in the model domain')
+        #             d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
+        #             thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
+        #         else:
+        #             thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
+        #             thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
+        #         thelake.to_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
 
         print('\n[Step 3A][Make_Watermask][Smoothing water and land masks] .......\n')
-
-        #if os.path.isfile('%s%s_expanded_10.tif' %(folders[8],watermaskname))==False:
         print('\n[Step 3A][Make_Watermask][Start with the GEE watermask at 10m resolution] .......\n')
         full_watermask = rasterio.open('%s%s_10.tif' %(folders[8],watermaskname))
 
@@ -765,11 +754,7 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
         full_watermask = fix_connectivity(structure,full_watermask,(-1,0))
         structure = np.array([[0., 1.], [1., 0.]])
         full_watermask = fix_connectivity(structure,full_watermask,(0,0))
-        #full_watermask = ndimage.binary_opening(full_watermask, np.ones ([2,2]),iterations=1).astype(full_watermask.dtype)
-        #full_watermask2 = np.where(full_watermask==1,0,1)
-        #full_watermask2 = ndimage.binary_opening(full_watermask2, np.ones([3,3]),iterations=1).astype(full_watermask2.dtype)
-        #print('binary_opening 3x3')
-        #full_watermask = np.where(full_watermask2==0,1,0)
+       
         print('\n[Step 3A][Make_Watermask][Save as expanded water mask] ......\n')
         with rasterio.open('%s%s_expanded_10.tif' %(folders[8],watermaskname),'w', **save_profile_10m) as dst:
             dst.write_band(1,full_watermask)
@@ -780,14 +765,45 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
                       '-dstnodata -9999 -co COMPRESS=DEFLATE'
                       %(xres,yres,folders[8],watermaskname,folders[8],watermaskname,xres,ulx,lry,lrx,uly))
 
-
         print('\n[Step 3A][Make_Watermask] Finished .........\n')
         return watermaskname
     else:
         print('\n[Step 3A][Make_Watermask] Skip .........\n')
         return watermaskname
 
+
 def more_opening(delta,folders,watermaskname,structure,ref,parameters):
+    '''
+    ############################################################################
+    ############################################################################
+    Info: Open water binary mask to improve/increase channel connectivity.
+    ############################################################################
+    ############################################################################
+    Parameters
+    ----------
+    delta : string
+        AOI name, must match input shapefile and folder.
+    folders : np.array of strings
+        folders within deltapath for model files.
+    structure : np.array
+        size of structure used in binary opening
+    parameters : pd.dataframe
+        Configuration parameters for model setup.
+    ref : open DatasetReader (rasterio)
+        The reference file used to detemine resolution, width, height, extent of all rasters
+    watermaskname : string
+        Name of the best water mask from GEE
+    skip : boolean
+        If True, do not build water polygons.
+    Returns
+    -------
+
+    '''
+    step = '3b'
+    print('\n\n\n##############################################################################################')
+    print('#################################[Step %s][Open Water Mask]####################################' %(step))
+    print('##############################################################################################\n')
+ 
     if structure == None:
         print('\n[Step 3B][Open_Watermask] Skip .........\n')
     else:
@@ -831,12 +847,6 @@ def more_opening(delta,folders,watermaskname,structure,ref,parameters):
         temp_watermask = np.where(full_watermask==0,2,full_watermask)
         fillers = np.where(temp_watermask==-9999,0,temp_watermask)## 0 will be filled, nans will be excluded
         full_watermask = np.where(_fillnodata(temp_watermask,fillers,500)>1,0,1)
-
-        # structure = np.array([[1., 0.], [0., 1.]])
-        # full_watermask = fix_connectivity(structure,full_watermask,(-1,0))
-        # structure = np.array([[0., 1.], [1., 0.]])
-        # full_watermask = fix_connectivity(structure,full_watermask,(0,0))
-        # full_watermask = ndimage.binary_opening(full_watermask, np.ones ([2,2]),iterations=1).astype(full_watermask.dtype)
         full_watermask = np.where(full_watermask==1,1,-9999)
 
         print('\n[Step 3A][Make_Watermask][Save as final water mask at %sm resolution] ......\n' %(xres))
@@ -853,15 +863,13 @@ def more_opening(delta,folders,watermaskname,structure,ref,parameters):
     print('\n[Step 3A][Make_Watermask] Finished .........\n')
 
 
-############################################################################
-############################################################################
-############################################################################
-## PART IV
-## OUTPUT: landcover, water types, DEM
-##########################################################################
-
 def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip=False):
     '''
+    ############################################################################
+    ############################################################################
+    Info: Make polygons defining land and water bodies (lakes, river, etc)
+    ############################################################################
+    ############################################################################
     Parameters
     ----------
     delta : string
@@ -878,8 +886,10 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
         directory where templates are stored
     skip : boolean
         If True, do not build water polygons.
-    '''
+    Returns
+    -------
 
+    '''
     step = 4
     print('\n\n\n##############################################################################################')
     print('################################[Step %s][Make_Polygons]######################################' %(step))
@@ -1093,15 +1103,15 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
     else:
         print('\n[Step %s][Make_Polygons] SKIP.......\n'%(step))
 
-############################################################################
-############################################################################
-############################################################################
-## PART V
-## OUTPUT: channel network, distances, widths
-##########################################################################
+
 def make_channel_networks(folders,delta,ref,parameters,pixel_step,skip=False):
 
     '''
+    ############################################################################
+    ############################################################################
+    Info: Derive channel networks using Orinoco
+    ############################################################################
+    ############################################################################
     Parameters
     ----------
     parameters : pd.dataframe
@@ -1123,6 +1133,10 @@ def make_channel_networks(folders,delta,ref,parameters,pixel_step,skip=False):
         minimum number of cells per channel width.
     watermask : np.array
         Mask of water/land.
+    Returns
+    -------
+    distance : np.array
+    widths : np.array
 
     '''
     step = 5
@@ -1134,18 +1148,12 @@ def make_channel_networks(folders,delta,ref,parameters,pixel_step,skip=False):
 
     xres,yres = int(save_profile['transform'][0]),-int(save_profile['transform'][4])
 
-    ###########################################################################
-    ###################### Import Config Parameters ###########################
-    ###########################################################################
-
     parameters.iloc[0]
     EPSG = parameters['EPSG'][0]                                                # Coordinate System must be UTM
     ulx  = parameters['ulx'][0]                                                 # ULX coordinate
     lry  = parameters['lry'][0]                                                 # LRY coordinate
     lrx  = parameters['lrx'][0]                                                 # LRX coordinate
     uly  = parameters['uly'][0]                                                 # ULY coordinate
-    #os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s -tap %s%s_oceanextended.shp %s%s_oceanextended.tif'  %(xres,yres,ulx,lry,lrx,uly,folders[7],delta,folders[1],delta))
-    #os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s -tap %s%s_riverextended.shp %s%s_riverextended.tif'  %(xres,yres,ulx,lry,lrx,uly,folders[7],delta,folders[1],delta))
 
     try: os.mkdir(folders[1])
     except:''
@@ -1190,15 +1198,14 @@ def make_channel_networks(folders,delta,ref,parameters,pixel_step,skip=False):
 
     return distance, widths
 
-############################################################################
-############################################################################
-############################################################################
-## PART VI
-## OUTPUT: Final elevation file
-##########################################################################
+
 def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,watermask,pixel_step,build_path):
     '''
-
+    ############################################################################
+    ############################################################################
+    Info: Build Digitical Elevation Model
+    ############################################################################
+    ############################################################################
     Parameters
     ----------
     parameters : pd.dataframe
@@ -1218,6 +1225,10 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
 
     Returns
     -------
+    elevation2 : np.array
+        elevation values in shape of reference raster
+    elev_name+'_'+str(xres) : string
+        name of elevation file
     '''
     step = 6
     print('\n\n\n##############################################################################################')
@@ -1828,14 +1839,40 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
     return elevation2, elev_name+'_'+str(xres)
 
 
-############################################################################
-############################################################################
-############################################################################
-## PART VIII
-## OUTPUT: Boundary condition information
-##########################################################################
-
 def set_boundary_conditions(delta,folders,res,parameters,elev_name):
+   '''
+    ############################################################################
+    ############################################################################
+    Info: Get data for boundary conditions
+    ############################################################################
+    ############################################################################
+    Parameters
+    ----------
+    parameters : pd.dataframe
+        Configuration parameters for model setup.
+    delta : string
+        AOI.
+    folders : np.array of strings
+        folders within deltapath for model files.
+    res : integer
+        x and y resolution of final products (must be the same).
+    elev_name : string
+        name of DEM file
+
+    Returns
+    -------
+    df_line : 
+    upstreamX : float
+        x location of discharge inlet
+    upstreamY : float
+        y location of discharge inlet
+    tidex : float
+        x location of tidal boundary
+    tidey : float
+        y location of tidal boundary
+
+    '''
+
     step = 8
     print('\n\n\n##############################################################################################')
     print('##############################[Step %s][Set_Boundary_Conditions]###############################'%(step))
@@ -1963,7 +2000,6 @@ def set_boundary_conditions(delta,folders,res,parameters,elev_name):
     print('\n[Step %s][Set_Boundary_Conditions] Finished .......\n'%(step))
 
     return df_line, upstreamX,upstreamY,tidex,tidey
-
 
 
 def get_inlet(delta,folders,res,parameters,inletx,inlety,elev_name):
@@ -2113,3 +2149,6 @@ def get_tide_data_pytmd(delta,path,tidex,tidey):
     print('\n[Step %s][Set_Boundary_Conditions] Finished .......\n'%(step))
 
     return tide_data
+
+
+
