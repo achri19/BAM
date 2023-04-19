@@ -1,0 +1,27 @@
+name: BAM
+channels:
+  - conda-forge
+dependencies:
+  - geopandas
+  - netcdf4
+  - fiona
+  - geemap
+  - utm
+  - cython
+  - pytmd
+  - pytest
+  - python=3.7
+  - nose
+  - backports.zoneinfo
+  - mpi4py
+  - pymetis
+  - pygeos
+  - gdal
+  - anuga
+  - scikit-image
+  - scikit-fmm
+  - rtree
+  - dill
+  - rasterstats
+  - numpy
+  - cmocean
