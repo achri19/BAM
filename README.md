@@ -1,5 +1,5 @@
 # BAM
- Building Open-Source Hydrodynamic Models Using ANUGA Software
+ Building ANUGA Open-Source Hydrodynamic Models 
 
  Scripts for building and running ANUGA hydrodynamic model base on open-source software and publicly available data
 
