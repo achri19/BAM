@@ -18,7 +18,7 @@ echo "https://github.com/GeoscienceAustralia/anuga_core"
 git clone https://github.com/GeoscienceAustralia/anuga_core.git  #> /dev/null 2>&1
 
 echo "(4) Install OpenBlas"
-apt-get install --target=/content/drive/MyDrive/installations libopenblas-dev
+apt-get -y install --target=/content/drive/MyDrive/installations libopenblas-dev
 
 echo "(5) Install anuga"
 
