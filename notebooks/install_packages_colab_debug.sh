@@ -17,7 +17,10 @@ echo "(3) Download anuga_core github repository"
 echo "https://github.com/GeoscienceAustralia/anuga_core"
 git clone https://github.com/GeoscienceAustralia/anuga_core.git  #> /dev/null 2>&1
 
-echo "(4) Install anuga"
+echo "(4) Install OpenBlas"
+apt-get install --target=/content/drive/MyDrive/installations libopenblas-dev
+
+echo "(5) Install anuga"
 
 cd anuga_core
 python setup.py --quiet build  > /dev/null 2>&1
