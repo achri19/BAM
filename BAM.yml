@@ -1,4 +1,4 @@
-name: BAM
+name: BAM2
 channels:
   - conda-forge
 dependencies:
@@ -25,3 +25,9 @@ dependencies:
   - rasterstats
   - numpy
   - cmocean
+  - triangle
+  - pmw
+  - rasterio
+  - pip
+  - pip:
+    - git+https://github.com/simard-landscape-lab/orinoco.git
