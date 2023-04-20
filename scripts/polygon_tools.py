@@ -21,7 +21,7 @@ import pandas as pd
 #from rasterstats import zonal_stats
 #from deltas_download import download_NASADEM2
 import sys
-sys.path.insert(1, '/scratch_lg/loac_hydro/alchrist/anuga/code')
+#sys.path.insert(1, '/scratch_lg/loac_hydro/alchrist/anuga/code')
 from deltas_mesh import segmentize, lesspoints, removedegenerate
 #from raster_bridges import make_distance
 #import fnmatch

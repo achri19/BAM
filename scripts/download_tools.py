@@ -106,19 +106,19 @@ def download_NASADEM2(source,delta,nasadem_path,folders,x1,x2,y1,y2,zone,ulx,lry
                         filetype = 'tif'
                     result = requests.get(url)
                     result.raise_for_status()
-                    f = open(nasadem_path+folders[0]+source+'_%s%s%s%s.%s' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3),filetype),'wb')
+                    f = open(nasadem_path/folders[0]/(source+'_%s%s%s%s.%s' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3),filetype)),'wb')
                     f.write(result.content)
                     f.close()
                     print('contents of URL written to %s_%s%s%s%s.%s' %(source,NS,str(ytile).zfill(2),EW,str(xtile).zfill(3),filetype))
                     if filetype == 'zip':
                         try:
-                            with ZipFile(nasadem_path+folders[0]+source+'_%s%s%s%s.zip' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3)),'r') as zp:
+                            with ZipFile(nasadem_path/folders[0]/(source+'_%s%s%s%s.zip' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3))),'r') as zp:
                                 zp.extractall(nasadem_path + folders[0])
-                            nasadems.append(nasadem_path +folders[0] + '%s%s%s%s.hgt' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3)))
+                            nasadems.append(nasadem_path /folders[0] / ('%s%s%s%s.hgt' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3))))
                         except:
                             ''# print('out of bounds')
                     elif filetype == 'tif':
-                         nasadems.append(nasadem_path + folders[0] + source+ '_%s%s%s%s.tif' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3)))
+                         nasadems.append(nasadem_path / folders[0] / (source + '_%s%s%s%s.tif' %(NS,str(ytile).zfill(2),EW,str(xtile).zfill(3))))
                 except requests.exceptions.ConnectionError:
                     print('Connection error - waiting 60 seconds')
                     time.sleep(60)
@@ -140,19 +140,19 @@ def download_NASADEM2(source,delta,nasadem_path,folders,x1,x2,y1,y2,zone,ulx,lry
                         filetype = 'tif'
                     result = requests.get(url)
                     result.raise_for_status()
-                    f = open(nasadem_path + folders[0]+source+'_%s%s%s%s.%s' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3),filetype),'wb')
+                    f = open(nasadem_path / folders[0]/(source+'_%s%s%s%s.%s' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3),filetype)),'wb')
                     f.write(result.content)
                     f.close()
                     print('contents of URL written to %s_%s%s%s%s.%s' %(source,NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3),filetype))
                     if filetype == 'zip':
                         try:
-                            with ZipFile(nasadem_path + folders[0]+source+'_%s%s%s%s.zip' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3)),'r') as zp:
+                            with ZipFile(nasadem_path / folders[0] / (source+'_%s%s%s%s.zip' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3))),'r') as zp:
                                 zp.extractall(nasadem_path + folders[0])
-                            nasadems.append(nasadem_path + folders[0] + '%s%s%s%s.hgt' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3)))
+                            nasadems.append(nasadem_path / folders[0] / ('%s%s%s%s.hgt' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3))))
                         except:
                             ''# print('out of bounds')
                     elif filetype == 'tif':
-                         nasadems.append(nasadem_path + folders[0] + source+ '_%s%s%s%s.tif' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3)))
+                         nasadems.append(nasadem_path / folders[0] / (source+ '_%s%s%s%s.tif' %(NS2,str(ytile2).zfill(2),EW,str(xtile).zfill(3))))
                 except requests.exceptions.ConnectionError:
                     print('Connection error - waiting 60 seconds')
                     time.sleep(60)
@@ -161,14 +161,16 @@ def download_NASADEM2(source,delta,nasadem_path,folders,x1,x2,y1,y2,zone,ulx,lry
                     if attempt ==9:print('Tried to connect 10 times and failed - moving to the next tile')
                 else:
                     break
-    with open("%s%s_%s.txt" %(nasadem_path + folders[0],delta,source), 'w') as f:
+    print(nasadems)
+    print("%s_%s.txt" %(nasadem_path / folders[0]/delta,source))
+    with open("%s_%s.txt" %(nasadem_path / folders[0]/delta,source), 'w') as f:
         for item in nasadems:
             f.write("%s\n" % item)
     # Merge NASADEM tiles to make topography file
-    os.system("gdalbuildvrt %s%s_%s.vrt -input_file_list %s%s_%s.txt -vrtnodata -9999 -a_srs EPSG:4326+5733" %(nasadem_path + folders[0],delta,source,nasadem_path + folders[0],delta,source))
+    os.system("gdalbuildvrt %s_%s.vrt -input_file_list %s_%s.txt -vrtnodata -9999 -a_srs EPSG:4326+5733" %(nasadem_path / folders[0]/delta,source,nasadem_path /folders[0]/delta,source))
     # for t in nasadems:
     delete = [os.path.join(dirpath,f)
-        for dirpath,dirnames, files in os.walk(nasadem_path + folders[0])
+        for dirpath,dirnames, files in os.walk(nasadem_path / folders[0])
         for f in fnmatch.filter(files,'*.zip')]
     for d in delete:
         os.remove(d)
@@ -187,5 +189,5 @@ def other(x):
     uly = uly - cutby
     lrx = ulx + (warped.RasterXSize * xres) - (cutby*2)
     lry = uly + (warped.RasterYSize * yres) + (cutby*2)
-    NASADEMvrt = gdal.Open(deltapath + '%s_NASADEM2.tif' %(delta))
-    NASADEM = gdal.Warp(deltapath + '%s_NASADEM.tif' %(delta), NASADEMvrt, dstSRS='EPSG:%s' %(EPSG), format='GTiff',xRes =30, yRes=30, targetAlignedPixels = True, outputBounds = [ulx,lry,lrx,uly])
+    NASADEMvrt = gdal.Open('%s_NASADEM2.tif' %(deltapath/delta))
+    NASADEM = gdal.Warp('%s_NASADEM.tif' %(deltapath /delta), NASADEMvrt, dstSRS='EPSG:%s' %(EPSG), format='GTiff',xRes =30, yRes=30, targetAlignedPixels = True, outputBounds = [ulx,lry,lrx,uly])

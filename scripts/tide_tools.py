@@ -17,13 +17,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import pyTMD.time
-from pyTMD.calc_delta_time import calc_delta_time
-from pyTMD.infer_minor_corrections import infer_minor_corrections
-from pyTMD.predict_tidal_ts import predict_tidal_ts
-from pyTMD.read_tide_model import extract_tidal_constants
-from pyTMD.read_netcdf_model import extract_netcdf_constants
-from pyTMD.read_GOT_model import extract_GOT_constants
-from pyTMD.read_FES_model import extract_FES_constants
+# from pyTMD.calc_delta_time import calc_delta_time
+# from pyTMD.infer_minor_corrections import infer_minor_corrections
+# from pyTMD.predict_tidal_ts import predict_tidal_ts
+# from pyTMD.read_tide_model import extract_tidal_constants
+# from pyTMD.read_netcdf_model import extract_netcdf_constants
+# from pyTMD.read_GOT_model import extract_GOT_constants
+# from pyTMD.read_FES_model import extract_FES_constants
 
 
 def maketides(LAT,LON,startdate,enddate,freq):
