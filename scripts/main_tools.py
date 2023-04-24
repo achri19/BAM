@@ -252,9 +252,9 @@ def get_extent_parameters(path,delta,folders,xres,parameters):
     try:
         ref_10m = rasterio.open('%s_GEBCO_%s.tif' %(folders[8] / delta,ref_res))
     except:
-        os.system('gdalwarp -overwrite -tr %s %s %s %s_GEBCO_%s.tif '\
+        os.system('gdalwarp -overwrite -tr %s %s %s/gebco_all.vrt %s_GEBCO_%s.tif '\
                   '-t_srs EPSG:%s -te %s %s %s %s -srcnodata -9999 -dstnodata -9999 -co COMPRESS=DEFLATE -q'
-                  %(ref_res,ref_res,input_path / "gebco_2020_geotiff/gebco_all.vrt",folders[8] / delta,ref_res,EPSG,ulx,lry,lrx,uly))
+                  %(ref_res,ref_res,input_path / "gebco_2020_geotiff",folders[8] / delta,ref_res,EPSG,ulx,lry,lrx,uly))
         ref_10m = rasterio.open('%s_GEBCO_%s.tif' %(folders[8] / delta,ref_res))
     save_profile_10m = ref_10m.profile
     parameters['ulx'] = ulx
