@@ -42,11 +42,6 @@ World Water Bodies
 - Available from UCLA
 - Download here: https://apps.gis.ucla.edu/geodata/hr/dataset/world_water_bodies/resource/a6b40af0-84cb-40ce-b1c5-b024527a6943
 
-
-<br>
-Author: Alexandra Christensen
-Affiliation: Jet Propulsion Laboratory, California Institute of Technology
-Acknowledgement: The research was carried out at the Jet Propulsion Laboratory, California Institute of Technology, under a contract with the National Aeronautics and Space Administration (80NM0018D0004)
  <br></br>
 
 
@@ -62,8 +57,11 @@ Summary: This notebook will walk through steps to build a digital elevation for 
 <br></br>
 
 
+## Citation:
+Author: Alexandra Christensen
+Affiliation: Jet Propulsion Laboratory, California Institute of Technology
+Acknowledgement: The research was carried out at the Jet Propulsion Laboratory, California Institute of Technology, under a contract with the National Aeronautics and Space Administration (80NM0018D0004)
 
-<br></br><br></br><br></br>
 Copyright 2022, by the California Institute of Technology. ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged. Any commercial use must be negotiated with the Office of Technology Transfer at the California Institute of Technology.
 
 This software may be subject to U.S. export control laws. By accepting this software, the user agrees to comply with all applicable U.S. export laws and regulations. User has the responsibility to obtain export licenses, or other export authority as may be required before exporting such information to foreign countries or providing access to foreign persons
