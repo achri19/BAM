@@ -10,7 +10,7 @@ pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely 
 # pip install -q --target=/content/drive/MyDrive/installations git+https://github.com/tsutterley/pyTMD.git
 
 echo "(3) Install gdal"
-apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin  > /dev/null 2>&1
+apt-get -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin  #> /dev/null 2>&1
 
 echo "(4) Install netcdf4"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-netcdf4  > /dev/null 2>&1
