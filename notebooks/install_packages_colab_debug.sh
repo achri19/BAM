@@ -13,15 +13,15 @@ apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal 
 echo "(3) Install netcdf4"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-netcdf4  > /dev/null 2>&1
 
-echo "(4) Download anuga_core github repository"
-echo "htps://github.com/GeoscienceAustralia/anuga_core"
-git clone https://github.com/GeoscienceAustralia/anuga_core.git  #> /dev/null 2>&1
-
 echo "(4) Install OpenBlas"
 apt-get -y install --target=/content/drive/MyDrive/installations libopenblas-dev > /dev/null 2>&1
 
 echo "(5) Install Orinoco"
 pip install --target=/content/drive/MyDrive/installations git+https://github.com/simard-landscape-lab/orinoco.git > /dev/null 2>&1
+
+echo "(6) Download anuga_core github repository"
+echo "htps://github.com/GeoscienceAustralia/anuga_core"
+git clone https://github.com/GeoscienceAustralia/anuga_core.git  #> /dev/null 2>&1
 
 echo "(6) Install anuga"
 cd anuga_core
