@@ -22,6 +22,18 @@ To activate the new environment:
 ```
 
 
+## Ancillary Datasets
+
+Several datasets are utilized in this project. Those that cannot be accessed through a Python API must be downloaded manually by the user.
+
+GEBCO General Bathymetry Charts of the Ocean
+ - The 2020 or 2022 global gridded dataset can be downloaded here (8 GB)
+ - Information https://www.gebco.net/data_and_products/gridded_bathymetry_data/gebco_2020/
+ - Download here: https://www.bodc.ac.uk/data/open_download/gebco/gebco_2022_sub_ice_topo/geotiff/
+ - Citation: GEBCO Compilation Group (2022) GEBCO_2022 Grid (doi:10.5285/e0f0bb80-ab44-2739-e053-6c86abc0289c)
+ 
+ 
+
 Author: Alexandra Christensen
 Affiliation: Jet Propulsion Laboratory, California Institute of Technology
 Acknowledgement: The research was carried out at the Jet Propulsion Laboratory, California Institute of Technology, under a contract with the National Aeronautics and Space Administration (80NM0018D0004)
