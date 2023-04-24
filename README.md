@@ -2,6 +2,7 @@
 
 This repository contains Python scripts for building and running open-source hydrodynamic ANUGA models using publicly available data. More information about ANUGA is available here https://github.com/GeoscienceAustralia/anuga_core
 
+
 ## Installation
 
 Use the BAM.yml file to set up a conda environment with requried packages:
@@ -48,6 +49,7 @@ World Water Bodies
 
 
 ## Tutorials: 
+Tutorials can be run on your local computer or through Google Colab using the "Open in Colab" buttons below. 
 Tutorial 0: Google Colab Introduction <br></br>
 Summary: This notebook will walk through the process of installing packages, connecting to your Google Drive, signing up for Google Earth Engine, and using Google Colab (a free, online platform for running Python Jupyter Notebooks)<br></br>
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/GoogleColab_Introduction.ipynb)<br></br>
