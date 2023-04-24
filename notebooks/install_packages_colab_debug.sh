@@ -10,7 +10,7 @@ pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely 
 # pip install -q --target=/content/drive/MyDrive/installations git+https://github.com/tsutterley/pyTMD.git
 apt update
 apt upgrade
-apt install --target=/content/drive/MyDrive/installations gdal-bin python-gdal python3-gdal
+apt-get -y install --target=/content/drive/MyDrive/installations gdal-bin python-gdal python3-gdal
 
 echo "(3) Install gdal"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin  > /dev/null 2>&1
