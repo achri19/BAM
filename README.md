@@ -49,7 +49,7 @@ Several datasets are utilized in this project. Those that cannot be accessed thr
 
 
 ## Tutorials: 
-Tutorials can be run on your local computer or through Google Colab using the "Open in Colab" buttons below. 
+Tutorials can be run on your local computer or through Google Colab using the "Open in Colab" buttons below. <br>
 
 ### Tutorial 0: Google Colab Introduction
 Summary: This notebook will walk through the process of installing packages, connecting to your Google Drive, signing up for Google Earth Engine, and using Google Colab (a free, online platform for running Python Jupyter Notebooks)<br></br>
