@@ -32,6 +32,12 @@ GEBCO General Bathymetry Charts of the Ocean
  - Download here: https://www.bodc.ac.uk/data/open_download/gebco/gebco_2022_sub_ice_topo/geotiff/
  - Citation: GEBCO Compilation Group (2022) GEBCO_2022 Grid (doi:10.5285/e0f0bb80-ab44-2739-e053-6c86abc0289c)
  
+ Global Mangrove Water
+ - Mangrove habitat extent - we use 2016 shapefiles in this project
+ - Bunting P, Rosenqvist A, Hilarides L, Lucas RM, Thomas N, Tadono T, Worthington TA, Spalding M, Murray NJ, Rebelo L-M. Global Mangrove Extent Change 1996–2020: Global Mangrove Watch Version 3.0. Remote Sensing. 2022; 14(15):3657. https://doi.org/10.3390/rs14153657 
+ - Downloadable from https://zenodo.org/record/6894273
+ - Interactive map available here https://www.globalmangrovewatch.org/
+ 
  
 
 Author: Alexandra Christensen
