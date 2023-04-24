@@ -5,7 +5,8 @@ cd /content/drive/MyDrive/installations
 echo "(1) Install pip packages to /content/drive/MyDrive/installations"
 echo "nose mpi4py triangle dill Pmw pymetis mpi4py pyproj geemap cmocean geopandas fiona pygeos rasterio rasterstats scikit-fmm rtree pyTMD Orinoco"
 pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely numpy mpi4py pyproj triangle dill Pmw pymetis mpi4py geemap cmocean geopandas fiona pygeos rasterio rasterstats scikit-fmm scipy backports.zoneinfo > /dev/null 2>&1
-pip install --target=/content/drive/MyDrive/installations pyTMD
+
+pip install --target=/content/drive/MyDrive/installations https://github.com/tsutterley/pyTMD.git
 
 echo "(2) Install gdal"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin  > /dev/null 2>&1
