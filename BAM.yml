@@ -1,4 +1,4 @@
-name: BAM2
+name: BAM
 channels:
   - conda-forge
 dependencies:
