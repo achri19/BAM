@@ -10,7 +10,6 @@ dependencies:
   - cython
   - pytmd
   - pytest
-  - python=3.7
   - nose
   - backports.zoneinfo
   - mpi4py
