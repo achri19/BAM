@@ -9,10 +9,10 @@ pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely 
 # echo "(2) Install pyTMD"
 # pip install -q --target=/content/drive/MyDrive/installations git+https://github.com/tsutterley/pyTMD.git
 
-wget -c https://repo.anaconda.com/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh
-chmod +x Miniconda3-4.5.4-Linux-x86_64.sh
-bash ./Miniconda3-4.5.4-Linux-x86_64.sh -b -f -p /usr/local
-conda install -q -y --prefix /usr/local python=3.6 gdal
+# wget -c https://repo.anaconda.com/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh
+# chmod +x Miniconda3-4.5.4-Linux-x86_64.sh
+# bash ./Miniconda3-4.5.4-Linux-x86_64.sh -b -f -p /usr/local
+# conda install -q -y --prefix /usr/local python=3.6 gdal
 
 
 echo "(3) Install gdal"
