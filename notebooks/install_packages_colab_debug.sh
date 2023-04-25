@@ -17,7 +17,7 @@ conda install -q -y --prefix /usr/local python=3.6 gdal
 
 echo "(3) Install gdal"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin python3-gdal > /dev/null 2>&1
-
+apt-get -y install --target=/content/drive/MyDrive/installations libgdal-dev
 echo "(4) Install netcdf4"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-netcdf4  > /dev/null 2>&1
 
