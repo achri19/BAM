@@ -18,6 +18,8 @@ echo "(3) Install gdal"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin python3-gdal > /dev/null 2>&1
 apt-get -q -y install --target=/content/drive/MyDrive/installations libgdal-dev > /dev/null 2>&1
 
+apt-get -q -y install --target=/content/drive/MyDrive/installations libspatialindex-dev > /dev/null 2>&1
+
 echo "(4) Install netcdf4"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-netcdf4  > /dev/null 2>&1
 
