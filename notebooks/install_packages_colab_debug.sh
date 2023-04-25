@@ -10,7 +10,7 @@ conda install -q -y --prefix /usr/local gdal
 
 echo "(1) Install pip packages to /content/drive/MyDrive/installations"
 echo "nose mpi4py triangle dill Pmw pymetis mpi4py pyproj gdal geemap cmocean geopandas fiona pygeos rasterio rasterstats scikit-fmm rtree pyTMD Orinoco"
-#pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely numpy mpi4py pyproj triangle dill Pmw pymetis geemap cmocean geopandas fiona pygeos rasterio rasterstats scikit-fmm scipy backports.zoneinfo > /dev/null 2>&1
+pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely numpy mpi4py pyproj triangle dill Pmw pymetis geemap cmocean geopandas fiona pygeos rasterio rasterstats scikit-fmm scipy backports.zoneinfo > /dev/null 2>&1
 
 
 
