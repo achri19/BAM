@@ -12,13 +12,14 @@ pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely 
 wget -c https://repo.anaconda.com/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh
 chmod +x Miniconda3-4.5.4-Linux-x86_64.sh
 bash ./Miniconda3-4.5.4-Linux-x86_64.sh -b -f -p /usr/local
-conda install -q -y --prefix /content/drive/MyDrive/installations gdal 
+conda install -q -y --prefix /content/drive/MyDrive/installations gdal nose rtree shapely numpy mpi4py pyproj triangle dill Pmw pymetis geemap cmocean geopandas fiona pygeos rasterio rasterstats scikit-fmm scipy backports.zoneinfo > /dev/null 2>&1
+
 
 echo "(3) Install gdal"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-gdal gdal-bin python3-gdal > /dev/null 2>&1
 apt-get -q -y install --target=/content/drive/MyDrive/installations libgdal-dev > /dev/null 2>&1
 
-apt-get -y install --target=/content/drive/MyDrive/installations libspatialindex-dev #> /dev/null 2>&1
+apt-get -q -y install --target=/content/drive/MyDrive/installations libspatialindex-dev > /dev/null 2>&1
 
 echo "(4) Install netcdf4"
 apt-get -q -y install --target=/content/drive/MyDrive/installations python-netcdf4  > /dev/null 2>&1
