@@ -14,7 +14,7 @@ pip install -q --target=/content/drive/MyDrive/installations nose rtree shapely 
 
 
 echo "(3) Install gdal"
-apt-get -y install python-gdal gdal-bin python3-gdal #> /dev/null 2>&1
+apt-get -y install gdal-bin python3-gdal #> /dev/null 2>&1
 # # apt-get -q -y install --target=/content/drive/MyDrive/installations libgdal-dev > /dev/null 2>&1
 # # apt-get -q -y install --target=/content/drive/MyDrive/installations python3-rtree > /dev/null 2>&1
 
