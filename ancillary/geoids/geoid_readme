@@ -1,0 +1,5 @@
+### Geoid Corrections
+> ***Download this EGM2008 file https://download.osgeo.org/proj/vdatum/egm08_25/egm08_25.gtx and move it to BAM/ancillary/geoids***
+- These gtx files are used to convert between different geoids
+- Available from NOAA's VDatum (resource for converting between vertical datums)
+- All gtx files are here: https://vdatum.noaa.gov/download.php#download_geoid
