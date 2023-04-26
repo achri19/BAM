@@ -1,32 +1,29 @@
-name: BAM
+name: BAMtest
 channels:
   - conda-forge
 dependencies:
-  - geopandas
-  - netcdf4
-  - fiona
-  - geemap
-  - utm
-  - cython
-  - pytmd
-  - pytest
   - nose
-  - backports.zoneinfo
-  - mpi4py
-  - pymetis
-  - pygeos
-  - gdal
-  - anuga
-  - scikit-image
-  - scikit-fmm
   - rtree
-  - dill
-  - rasterstats
+  - shapely
   - numpy
-  - cmocean
+  - pyproj
   - triangle
+  - dill
   - pmw
+  - dill
+  - pymetis
+  - geemap
+  - cmocean
+  - geopandas
+  - fiona
+  - pygeos
   - rasterio
+  - rasterstats
+  - scikit-fmm
+  - scikit-image
+  - scipy
+  - backports.zoneinfo
+  - pytmd
   - pip
   - pip:
     - git+https://github.com/simard-landscape-lab/orinoco.git
