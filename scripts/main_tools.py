@@ -655,8 +655,11 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
         print('\n[Step 3A][Make_Watermask][Load Hydropolys] .......\n')
         try: hydropoly = gpd.read_file("%s_hydropolys.shp" %(folders[8] / delta))
         except:
-            print('##################### Extracting UCLA Hydropolys for the AOI')
-            hydropolys = gpd.read_file(path_ancillary / "ucla/hydropolys_fix.shp")
+            print('##################### Extracting Hydropolys for the AOI')
+            hydropoly_files = [os.path.join(dirpath,f)
+                                for dirpath,dirnames, files in path_ancillary
+                                for f in fnmatch.filter(files,'*hydropolys*.shp')]
+            hydropolys = gpd.read_file(hydropoly_files[0]) #path_ancillary / "hydropolys/hydropolys_fix.shp")
             hydropolys_crs = hydropolys.crs
             extentpoly2 = extentpoly.buffer(xres*10)                                   # Create slightly larged extent for clipping in 4326 crs
             extentpoly2 =  extentpoly2.to_crs(hydropolys_crs)                       # Reproject to 4326 CRS
