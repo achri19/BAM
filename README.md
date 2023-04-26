@@ -67,7 +67,8 @@ Summary: This notebook will walk through steps to build a digital elevation for 
 <br></br>
 
 
-
+## Issues
+If you have issues running the code or questions, please open an issue through GitHub explaining the steps to replicate your issue and the exact errors that you're seeing.
 
 ## Citation:
 Author: Alexandra Christensen
