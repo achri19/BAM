@@ -24,6 +24,9 @@ dependencies:
   - scipy
   - backports.zoneinfo
   - pytmd
+  - netCDF4
+  - utm
+  - lxml
   - pip
   - pip:
     - git+https://github.com/simard-landscape-lab/orinoco.git
