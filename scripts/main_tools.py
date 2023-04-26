@@ -390,7 +390,7 @@ def setup_AOI_files(path,delta,folders,xres,parameters):
                               '-s_srs "+proj=longlat +datum=WGS84 +no_defs +geoidgrids=%s" '\
                               '-co COMPRESS=DEFLATE '\
                               '%s_NASADEM.vrt %s_NASADEM_egm08.tif -co COMPRESS=DEFLATE -q'
-                              %(input_path / egm08_25.gtx,input_path / egm96_15.gtx,folders[1] / delta,folders[8] / delta))
+                              %(input_path / 'geoids' / 'egm08_25.gtx',input_path / 'geoids' / 'egm96_15.gtx',folders[1] / delta,folders[8] / delta))
                 print('##################### Convert from native WGS84 (EPSG 4326) to UTM (EPSG %s)' %(EPSG))
                 os.system('gdalwarp -overwrite -tr %s %s -tap -te %s %s %s %s -srcnodata -9999 -dstnodata -9999 '\
                           '-s_srs EPSG:4326 -t_srs EPSG:%s %s_%s_egm08.tif %s_%s_topo_%s.tif -co COMPRESS=DEFLATE -q'
@@ -498,7 +498,10 @@ def setup_AOI_files(path,delta,folders,xres,parameters):
     print('\n[Step 2][Setup_AOI_Files][Loading Global Mangrove Watch ] .......\n')
     if os.path.isfile(folders[8] / ('%s_GMW_%s.tif' %(delta,xres)))==False:
         try:
-            mangroves = gpd.read_file(input_path / "GMW_2016_v2_fixed.shp")
+            gmw_files = [os.path.join(dirpath,f)
+                    for dirpath,dirnames, files in os.walk(input_path)
+                    for f in fnmatch.filter(files,'*2016*.shp')]
+            mangroves = gpd.read_file(gmw_files[0]) #input_path / "GMW_2016_v2_fixed.shp")
             mangrove = gpd.overlay(mangroves,model_domain.to_crs('EPSG:4326'),how='intersection')
             mangrove = mangrove.to_crs('EPSG:%s' %(EPSG))
             mangrove.to_file("%s_GMW.shp" %(folders[1] / delta))     # Save
