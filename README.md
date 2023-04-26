@@ -45,7 +45,7 @@ Several datasets are utilized in this project. Those that cannot be accessed thr
 - Download here: https://apps.gis.ucla.edu/geodata/hr/dataset/world_water_bodies/resource/a6b40af0-84cb-40ce-b1c5-b024527a6943
 
 ### Geoid Corrections
-> ***Download this EGM2008 file https://vdatum.noaa.gov/download/data/vdatum_EGM2008.zip, unzip it, find the file "egm2008.gtx" and move it to BAM/ancillary/geoids***
+> ***Download this EGM2008 file https://download.osgeo.org/proj/vdatum/egm08_25/egm08_25.gtx and move it to BAM/ancillary/geoids***
 - These gtx files are used to convert between different geoids
 - Available from NOAA's VDatum (resource for converting between vertical datums)
 - All gtx files are here: https://vdatum.noaa.gov/download.php#download_geoid
