@@ -1,6 +1,7 @@
 
 <<<<<<< Updated upstream
 examples/
+ancillary/
 >>>>>>> Stashed changes
 *.pyc
 .DS_Store
