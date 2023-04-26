@@ -61,7 +61,11 @@ Tutorials can be run on your local computer or through Google Colab using the "O
 Summary: This notebook will walk through the process of installing packages, connecting to your Google Drive, signing up for Google Earth Engine, and using Google Colab (a free, online platform for running Python Jupyter Notebooks)<br></br>
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/GoogleColab_Introduction.ipynb)<br></br>
 
-### Tutorial 1: Build Model Files
+### Tutorial 1: Download Ancillary Data
+Summary: This notebook will ensure you have the ancillary data needed to run the notebooks<br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Downloading_Data.ipynb)<br></br>
+
+### Tutorial 2: Build Model Files
 Summary: This notebook will walk through steps to build a digital elevation for the study area using open-source/publicly available datasets.<br></br>
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Build_Model_Files.ipynb)
 <br></br>
