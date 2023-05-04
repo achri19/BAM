@@ -42,7 +42,7 @@ Several datasets are utilized in this project. Those that cannot be accessed thr
 
 ### World Water Bodies
 - Available from UCLA
-- Download here: https://apps.gis.ucla.edu/geodata/hr/dataset/world_water_bodies/resource/a6b40af0-84cb-40ce-b1c5-b024527a6943
+- Download here: http://faculty.baruch.cuny.edu/geoportal/data/esri/world/hydropolys.zip
 
 ### Geoid Corrections
 > ***Download this EGM2008 file https://download.osgeo.org/proj/vdatum/egm08_25/egm08_25.gtx and move it to BAM/ancillary/geoids***
