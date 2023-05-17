@@ -36,12 +36,12 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredSizeBar)
 import requests
 from tqdm.auto import tqdm  # provides a progressbar
-from pathlib import Path 
+from pathlib import Path, PurePath
 
-if os.getcwd().split('/')[1] == 'Users':
-    code_path = '/users/alchrist/documents/github/BAM/scripts/'
+if PurePath(os.getcwd()).parts[1] == 'Users':
+    code_path = Path('/users/alchrist/documents/github/BAM/scripts/')
 else:
-    code_path = '/projects/loac_hydro/alchrist/processing/code'
+    code_path = Path('/projects/loac_hydro/alchrist/processing/code')
 sys.path.insert(1, code_path)
 from polygon_tools import findconnectedwater
 from download_tools import download_NASADEM2
@@ -657,7 +657,7 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
         except:
             print('##################### Extracting Hydropolys for the AOI')
             hydropoly_files = [os.path.join(dirpath,f)
-                                for dirpath,dirnames, files in path_ancillary
+                                for dirpath,dirnames, files in os.walk(path_ancillary)
                                 for f in fnmatch.filter(files,'*hydropolys*.shp')]
             hydropolys = gpd.read_file(hydropoly_files[0]) #path_ancillary / "hydropolys/hydropolys_fix.shp")
             hydropolys_crs = hydropolys.crs
