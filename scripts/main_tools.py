@@ -653,7 +653,7 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
         ## Import hydropolys (UCLA) shapefile to define rivers and oceans
         ## Hydrolakes do not match perfectly with hydropolys - need to remove small artifacts
         print('\n[Step 3A][Make_Watermask][Load Hydropolys] .......\n')
-        try: hydropoly = gpd.read_file("%s_hydropolys.shp" %(folders[8] / delta))
+        try: hydropoly = gpd.read_file("%s_hydropolys.shp" %(folders[0] / delta))
         except:
             print('##################### Extracting Hydropolys for the AOI')
             hydropoly_files = [os.path.join(dirpath,f)
@@ -667,7 +667,9 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
             hydropoly = hydropoly.to_crs("EPSG:%s" %(EPSG))                         # Reproject to UTM
             hydropoly = gpd.overlay(hydropoly,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
             hydropoly.to_file("%s_hydropolys.shp" %(folders[0] / delta))            # Save
-
+        if 'TYPE' not in hydropoly.columns:
+            hydropoly.rename(columns={'Type':'TYPE'}, inplace=True)
+            hydropoly.columns
         # print('\n[Step 3A][Make_Watermask][Load SWOT PLD lakes] .......\n')
         # try: thelake = gpd.read_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
         # except:
@@ -931,20 +933,43 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
             #     os.remove('%s%s_watermask_%s.shp' %(folders[7],delta,xres))
             # if os.path.isfile('%s%s_landmask_%s.shp' %(folders[7],delta,xres)):
             #     os.remove('%s%s_landmask_%s.shp' %(folders[7],delta,xres))
-            filein = open(templates_path / 'run_gdal24.sh')
-            template = Template(filein.read())
+            # filein = open(templates_path / 'run_gdal24.sh')
+            # template = Template(filein.read())
             # For some reason, the gdal goddess is picky and an older version of gdal is needed for polgonizing successfully.
             # This will leave our conda environment and run gdal_polygonize in a env with older gdal ;)
-            replacements = {'start':  "$(conda shell.bash hook)",
-                            'environment':  'testgdal',
-                            'command' : 'gdal_polygonize.py "%s_watermask_%s.tif" "%s_watermask_%s.shp" -8 -b 1 -f "ESRI Shapefile" %s DN' %(folders[8]/delta,xres,folders[7]/delta,xres,delta),
-                            'command2' : 'gdal_polygonize.py "%s_landmask_%s.tif" "%s_landmask_%s.shp" -8 -b 1 -f "ESRI Shapefile" %s DN' %(folders[8]/delta,xres,folders[7]/delta,xres,delta)
-                            }
-            makeoutput = template.substitute(replacements)
-            file = open(folders[1] / 'run_gdal24_test.sh', 'w')
-            file.write(makeoutput)
-            file.close()
-            subprocess.call(['sh',folders[1] / 'run_gdal24_test.sh'])
+            # replacements = {'start':  "$(conda shell.bash hook)",
+            #                 'environment':  'testgdal',
+            #                 'command' : 'gdal_polygonize.py "%s_watermask_%s.tif" "%s_watermask_%s.shp" -8 -b 1 -f "ESRI Shapefile" %s DN' %(folders[8]/delta,xres,folders[7]/delta,xres,delta),
+            #                 'command2' : 'gdal_polygonize.py "%s_landmask_%s.tif" "%s_landmask_%s.shp" -8 -b 1 -f "ESRI Shapefile" %s DN' %(folders[8]/delta,xres,folders[7]/delta,xres,delta)
+            #                 }
+            # makeoutput = template.substitute(replacements)
+            # file = open(folders[1] / 'run_gdal24_test.sh', 'w')
+            # file.write(makeoutput)
+            # file.close()
+            # subprocess.call(['sh',folders[1] / 'run_gdal24_test.sh'])
+            from osgeo import ogr, osr
+            sourceRaster = gdal.Open('%s_watermask_%s.tif' %(folders[8]/delta,xres))
+            srcband = sourceRaster.GetRasterBand(1)
+            driver = ogr.GetDriverByName("ESRI Shapefile")
+            dst_layername = str("%s_watermask_%s.shp" %(folders[7]/delta,xres))
+            if os.path.isfile(dst_layername) == True:
+                os.remove(dst_layername)
+            drv = ogr.GetDriverByName("ESRI Shapefile")
+            dst_ds = drv.CreateDataSource( dst_layername )
+            sp_ref = osr.SpatialReference()
+            sp_ref.SetFromUserInput('EPSG%s' %(EPSG))
+            dst_layer = dst_ds.CreateLayer(dst_layername, srs = sp_ref )
+
+            gdal.Polygonize( srcband,srcband, dst_layer, 1, ['8CONNECTED=8'], callback=None  )
+            sourceRaster = gdal.Open('%s_landmask_%s.tif' %(folders[8]/delta,xres))
+            srcband = sourceRaster.GetRasterBand(1)
+            dst_layername = str("%s_landmask_%s.shp" %(folders[7]/delta,xres))
+            if os.path.isfile(dst_layername) == True:
+                os.remove(dst_layername)
+            drv = ogr.GetDriverByName("ESRI Shapefile")
+            dst_ds = drv.CreateDataSource( dst_layername )
+            dst_layer = dst_ds.CreateLayer(dst_layername, srs = sp_ref )
+            gdal.Polygonize( srcband,srcband, dst_layer, 1, ['8CONNECTED=8'], callback=None  )
 
         hydropoly = gpd.read_file("%s_hydropolys.shp" %(folders[0] / delta))
         # hydropoly = gpd.overlay(hydropoly,extentpoly,how='intersection')
@@ -1049,7 +1074,7 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
             rivers = rivers.explode(index_parts=True).reset_index(drop=True)
             rivers = rivers[rivers.geometry.type=='Polygon']
             rivers= gpd.overlay(rivers,extentpoly,how='intersection')
-            rivers.to_file("%s_rivers_%s.shp" %(folders[7] / delta,xres))
+            rivers.to_file("%s_rivers_%s.shp" %(folders[7] / delta,xres),crs='EPSG:%s' %(EPSG))
             print('##################### River polygons saved to %s%s_rivers_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
         # else:
         #     rivers = gpd.overlay(rivers,extentpoly,how='intersection')
