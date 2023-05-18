@@ -98,8 +98,20 @@ def make_distance(water,ocean,folders,delta,pixel_step):
         os.remove('%s_segments_%sx%s.shp' %(folders[7]/delta,xres,pixel_step))
     ## Polygonize the segment
     print('\n######[Make_Channel_Networks][Orinoco --> segment raster to shapefile] .......\n')
-    os.system('gdal_polygonize.py %s_segments_%sx%s.tif %s_segments_%sx%s.shp' %(folders[8]/delta,xres,pixel_step,folders[7]/delta,xres,pixel_step))
-
+    ## os.system('gdal_polygonize.py %s_segments_%sx%s.tif %s_segments_%sx%s.shp' %(folders[8]/delta,xres,pixel_step,folders[7]/delta,xres,pixel_step))
+    from osgeo import ogr, osr
+    sourceRaster = gdal.Open('%s_segments_%sx%s.tif' %(folders[8]/delta,xres,pixel_step))
+    srcband = sourceRaster.GetRasterBand(1)
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    dst_layername = str("%s_segments_%sx%s.shp" %(folders[7]/delta,xres,pixel_step))
+    if os.path.isfile(dst_layername) == True:
+        os.remove(dst_layername)
+    drv = ogr.GetDriverByName("ESRI Shapefile")
+    dst_ds = drv.CreateDataSource( dst_layername )
+    sp_ref = osr.SpatialReference()
+    sp_ref.SetFromUserInput('EPSG%s' %(ocean.crs.to_epsg()))
+    dst_layer = dst_ds.CreateLayer(dst_layername, srs = sp_ref )
+    dst_layer.crs_from_epsg(ocean.crs.to_epsg())
     segment_interface_slice = np.isin(segments, interface_adj_segments)
     segments_along_interface = segments.copy()
     segments_along_interface[~segment_interface_slice] = 0
