@@ -109,9 +109,10 @@ def make_distance(water,ocean,folders,delta,pixel_step):
     drv = ogr.GetDriverByName("ESRI Shapefile")
     dst_ds = drv.CreateDataSource( dst_layername )
     sp_ref = osr.SpatialReference()
-    sp_ref.SetFromUserInput('EPSG%s' %(ocean.crs.to_epsg()))
+    sp_ref.ImportFromEPSG(int(ocean.crs.to_epsg()))
     dst_layer = dst_ds.CreateLayer(dst_layername, srs = sp_ref )
-    dst_layer.crs_from_epsg(ocean.crs.to_epsg())
+    gdal.Polygonize( srcband,srcband, dst_layer, 1, ['8CONNECTED=8'], callback=None  )
+    del dst_layer
     segment_interface_slice = np.isin(segments, interface_adj_segments)
     segments_along_interface = segments.copy()
     segments_along_interface[~segment_interface_slice] = 0

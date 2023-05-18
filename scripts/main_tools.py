@@ -957,7 +957,7 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
             drv = ogr.GetDriverByName("ESRI Shapefile")
             dst_ds = drv.CreateDataSource( dst_layername )
             sp_ref = osr.SpatialReference()
-            sp_ref.SetFromUserInput('EPSG%s' %(EPSG))
+            sp_ref.ImportFromEPSG(EPSG)
             dst_layer = dst_ds.CreateLayer(dst_layername, srs = sp_ref )
 
             gdal.Polygonize( srcband,srcband, dst_layer, 1, ['8CONNECTED=8'], callback=None  )
