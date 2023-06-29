@@ -2,6 +2,7 @@
 <<<<<<< Updated upstream
 examples/
 ancillary/
+Notebooks/.ipynb_checkpoints/
 >>>>>>> Stashed changes
 *.pyc
 .DS_Store
