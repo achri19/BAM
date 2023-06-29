@@ -22,6 +22,12 @@ To activate the new environment:
 - conda activate BAM
 ```
 
+To update the environment (latest YML is June 29, 2023):
+```diff
+- conda env update -f BAM.yml --prune
+OR
+- mamba env update -f BAM.yml --prune
+```
 
 ## Ancillary Datasets
 
@@ -41,7 +47,7 @@ Several datasets are utilized in this project. Those that cannot be accessed thr
  - Citation: Bunting P, Rosenqvist A, Hilarides L, Lucas RM, Thomas N, Tadono T, Worthington TA, Spalding M, Murray NJ, Rebelo L-M. Global Mangrove Extent Change 1996–2020: Global Mangrove Watch Version 3.0. Remote Sensing. 2022; 14(15):3657. https://doi.org/10.3390/rs14153657 
 
 ### World Water Bodies
-- Available from UCLA
+- Available from multiple sources: one is here
 - Download here: http://faculty.baruch.cuny.edu/geoportal/data/esri/world/hydropolys.zip
 
 ### Geoid Corrections
