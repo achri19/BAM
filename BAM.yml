@@ -32,5 +32,6 @@ dependencies:
   - gdal
   - jupyter
   - cython
+  - mpi4py
   - pip:
     - git+https://github.com/simard-landscape-lab/orinoco.git
