@@ -73,9 +73,11 @@ Summary: This notebook will ensure you have the ancillary data needed to run the
 
 ### Tutorial 2: Build Model Files
 Summary: This notebook will walk through steps to build a digital elevation for the study area using open-source/publicly available datasets.<br></br>
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Build_Model_Files.ipynb)
-<br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Build_Model_Files.ipynb) <br></br>
 
+### Tutorial 3: Run ANUGA Model
+Summary: This notebook will setup and run an ANUGA simulation. All files required for the simulation are provided.<br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Run_ANUGA.ipynb) <br></br>
 
 ## Issues
 If you have issues running the code or questions, please open an issue through GitHub explaining the steps to replicate your issue and the exact errors that you're seeing.
