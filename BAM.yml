@@ -28,5 +28,9 @@ dependencies:
   - utm
   - lxml
   - pip
+  - anuga
+  - gdal
+  - jupyter
+  - cython
   - pip:
     - git+https://github.com/simard-landscape-lab/orinoco.git
