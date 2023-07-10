@@ -927,7 +927,7 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
     print('\n[Step %s][Make_Polygons][Open land/water mask] .......\n' %(step))
     print('##################### Water delineated with %s_%s' %(watermaskname,xres))
     if skip == False:
-        if os.path.isfile('%s_landmask_%s.shp' %(folders[7] / delta,xres))==False:
+        if os.path.isfile('%s_land_%s.shp' %(folders[7] / delta,xres))==False:
             #os.remove('%s%s_watermask.shp' %(folders[7],delta))
             # if os.path.isfile('%s%s_watermask_%s.shp' %(folders[7],delta,xres)):
             #     os.remove('%s%s_watermask_%s.shp' %(folders[7],delta,xres))
@@ -957,7 +957,7 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
             drv = ogr.GetDriverByName("ESRI Shapefile")
             dst_ds = drv.CreateDataSource( dst_layername )
             sp_ref = osr.SpatialReference()
-            sp_ref.ImportFromEPSG(EPSG)
+            sp_ref.ImportFromEPSG(int(EPSG))
             dst_layer = dst_ds.CreateLayer(dst_layername, srs = sp_ref )
 
             gdal.Polygonize( srcband,srcband, dst_layer, 1, ['8CONNECTED=8'], callback=None  )
@@ -1456,7 +1456,7 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
         segments = gpd.read_file('%s_segments_%sx%s.shp' %(folders[7]/delta,xres,pixel_step))
         prox_widths = segments.join(pd.DataFrame(zonal_stats(segments, '%s_river_proximity_%sx%s.tif'  %(folders[8]/delta,xres,pixel_step),stats="max")))
         prox_widths['newwidth'] = prox_widths['max']*2
-        prox_widths = prox_widths[prox_widths['DN']!=0]
+        #prox_widths = prox_widths[prox_widths['DN']!=0]
         try:
             os.remove('%s_widthsfromproximity_%sx%s.shp' %(folders[7]/delta,xres,pixel_step))
         except: ''
