@@ -1408,10 +1408,10 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
         ##############################################################################
         print('\n[Step %s][Make_Model_Foundation][Fetching Manning coefficients LUT] .....\n'%(step))
         if landcovermethod == 'Copernicus':
-            lut = np.genfromtxt(build_path / 'configs/Copernicus_manningLUT.csv',delimiter = ',')
+            lut = np.genfromtxt(build_path / 'ancillary' / 'Copernicus_manningLUT.csv',delimiter = ',')
             np.savetxt('%s_%s_manningLUT.csv'%(folders[8]/delta,landcovermethod),lut,delimiter=',')
         elif landcovermethod == 'WorldCover':
-            lut = np.genfromtxt(build_path / 'configs/WorldCover_manningLUT.csv',delimiter = ',')
+            lut = np.genfromtxt(build_path / 'ancillary' / 'WorldCover_manningLUT.csv',delimiter = ',')
             np.savetxt('%s_%s_manningLUT.csv'%(folders[8]/delta,landcovermethod),lut,delimiter=',')
         else:
             landcovermethod = 'User'
