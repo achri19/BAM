@@ -1,0 +1,80 @@
+<VRTDataset rasterXSize="86400" rasterYSize="43200">
+  <SRS>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]</SRS>
+  <GeoTransform> -1.8000000000000000e+02,  4.1666666666666666e-03,  0.0000000000000000e+00,  9.0000000000000000e+01,  0.0000000000000000e+00, -4.1666666666666666e-03</GeoTransform>
+  <VRTRasterBand dataType="Int16" band="1">
+    <Metadata>
+      <MDI key="STATISTICS_APPROXIMATE">YES</MDI>
+      <MDI key="STATISTICS_MAXIMUM">5840</MDI>
+      <MDI key="STATISTICS_MEAN">-1945.1163965964</MDI>
+      <MDI key="STATISTICS_MINIMUM">-7819</MDI>
+      <MDI key="STATISTICS_STDDEV">2660.1047339379</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+    <NoDataValue>-32767</NoDataValue>
+    <ColorInterp>Gray</ColorInterp>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n0.0_s-90.0_w-180.0_e-90.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="0" yOff="21600" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n0.0_s-90.0_w-90.0_e0.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="21600" yOff="21600" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n0.0_s-90.0_w0.0_e90.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="43200" yOff="21600" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n0.0_s-90.0_w90.0_e180.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="64800" yOff="21600" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n90.0_s0.0_w-180.0_e-90.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n90.0_s0.0_w-90.0_e0.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="21600" yOff="0" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n90.0_s0.0_w0.0_e90.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="43200" yOff="0" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">gebco_2020_n90.0_s0.0_w90.0_e180.0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="21600" RasterYSize="21600" DataType="Int16" BlockXSize="21600" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="21600" ySize="21600" />
+      <DstRect xOff="64800" yOff="0" xSize="21600" ySize="21600" />
+      <NODATA>-32767</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+</VRTDataset>
