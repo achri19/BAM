@@ -676,21 +676,27 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
             print('##################### Extracting SWOT PLD Lakes for the AOI')
             try:
                 plds = gpd.read_file('%s/SWOT_PLD.gdb/SWOT_PLD.shp' %(path_ancillary))
-            except:''
+                lake_src = 'SWOTPLD'
+            except:
+                try:
+                    plds = gpd.read_file('%s/hydrolakes/HydroLAKES_polys_v10_shp/HydroLAKES_polys_v10.shp'%(path_ancillary))
+                    lake_src = 'hydroLAKES'
+                except:
+                    print('Lake dataset is missing, return to Notebook 1')
+            # else:
+            hydrolakes_crs = plds.crs
+            extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
+            extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
+            thelake = gpd.clip(plds,extentpoly2)                            # Clip HydroLakes to model domain extent
+            thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
+            if len(thelake) == 0:
+                print('There are no lakes in the model domain')
+                d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
+                thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
             else:
-                hydrolakes_crs = plds.crs
-                extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
-                extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
-                thelake = gpd.clip(plds,extentpoly2)                            # Clip HydroLakes to model domain extent
-                thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
-                if len(thelake) == 0:
-                    print('There are no lakes in the model domain')
-                    d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
-                    thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
-                else:
-                    thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
-                    thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
-                thelake.to_file("%s/%s_SWOTPLD.shp" %(folders[0],delta))
+                thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
+                thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
+            thelake.to_file("%s/%s_%s.shp" %(folders[0],delta,lake_src))
 
         print('\n[Step 3A][Make_Watermask][Smoothing water and land masks] .......\n')
         print('\n[Step 3A][Make_Watermask][Start with the GEE watermask at 10m resolution] .......\n')
@@ -1761,9 +1767,9 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
         print('##################### Elevation File: \n%s' %(elev_name))
 
         #elevationame = '%s_%s' %(delta,elev_name)
-        try: os.mkdir(elevationpath)
-        except: ''
-        print('################################# Working directory will be: \n%s' %(elevationpath))
+        # try: os.mkdir(elevationpath)
+        # except: ''
+        print('################################# Working directory will be: \n%s' %(folders[4]))
         with rasterio.open("%s_%s.tif" %(folders[4]/elev_name,xres),'w', **save_profile) as dst:
             dst.write_band(1,elevation2.astype('float64'))
         with rasterio.open("%s_landcover_final_%s.tif" %(folders[8]/delta,xres),'w', **save_profile) as dst:
