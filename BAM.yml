@@ -25,13 +25,17 @@ dependencies:
   - backports.zoneinfo
   - pytmd
   - netCDF4
-  - utm
   - lxml
-  - pip
-  - anuga
   - gdal
   - jupyter
   - cython
   - mpi4py
+  - cgal
+  - spyder
+  - anuga
+  - pip  
   - pip:
     - git+https://github.com/simard-landscape-lab/orinoco.git
+    - git+https://github.com/CHLNDDEV/oceanmesh.git
+    - utm
+    - PyGeodesy
