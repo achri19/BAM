@@ -161,8 +161,7 @@ def download_NASADEM2(source,delta,nasadem_path,folders,x1,x2,y1,y2,zone,ulx,lry
                     if attempt ==9:print('Tried to connect 10 times and failed - moving to the next tile')
                 else:
                     break
-    print(nasadems)
-    print("%s_%s.txt" %(nasadem_path / folders[0]/delta,source))
+    # print("%s_%s.txt" %(nasadem_path / folders[0]/delta,source))
     with open("%s_%s.txt" %(nasadem_path / folders[0]/delta,source), 'w') as f:
         for item in nasadems:
             f.write("%s\n" % item)
