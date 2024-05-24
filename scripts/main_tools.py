@@ -670,27 +670,27 @@ def make_watermask(path_ancillary,delta,folders,parameters,ref,clean_with_landco
         if 'TYPE' not in hydropoly.columns:
             hydropoly.rename(columns={'Type':'TYPE'}, inplace=True)
             hydropoly.columns
-        # print('\n[Step 3A][Make_Watermask][Load SWOT PLD lakes] .......\n')
-        # try: thelake = gpd.read_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
-        # except:
-        #     print('##################### Extracting SWOT PLD Lakes for the AOI')
-        #     try:
-        #         plds = gpd.read_file('%sSWOT_PLD.gdb/SWOT_PLD.shp' %(path_ancillary))
-        #     except:''
-        #     else:
-        #         hydrolakes_crs = plds.crs
-        #         extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
-        #         extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
-        #         thelake = gpd.clip(plds,extentpoly2)                            # Clip HydroLakes to model domain extent
-        #         thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
-        #         if len(thelake) == 0:
-        #             print('There are no lakes in the model domain')
-        #             d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
-        #             thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
-        #         else:
-        #             thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
-        #             thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
-        #         thelake.to_file("%s%s_SWOTPLD.shp" %(folders[0],delta))
+        print('\n[Step 3A][Make_Watermask][Load SWOT PLD lakes] .......\n')
+        try: thelake = gpd.read_file("%s/%s_SWOTPLD.shp" %(folders[0],delta))
+        except:
+            print('##################### Extracting SWOT PLD Lakes for the AOI')
+            try:
+                plds = gpd.read_file('%s/SWOT_PLD.gdb/SWOT_PLD.shp' %(path_ancillary))
+            except:''
+            else:
+                hydrolakes_crs = plds.crs
+                extentpoly2 = extentpoly.buffer(xres)                                   # Create slightly larged extent for clipping in 4326 crs
+                extentpoly2 =  extentpoly2.to_crs(hydrolakes_crs)                       # Reproject to 4326 CRS
+                thelake = gpd.clip(plds,extentpoly2)                            # Clip HydroLakes to model domain extent
+                thelake = thelake.to_crs("EPSG:%s" %(EPSG))                         # Save
+                if len(thelake) == 0:
+                    print('There are no lakes in the model domain')
+                    d = {'geometry': [Polygon([(0, 0), (0,0),(0,0)])]}
+                    thelake = gpd.GeoDataFrame(d,crs="EPSG:%s" %(EPSG))
+                else:
+                    thelake['TYPE_2'] = 'Lake'                                            # Add label to identify lakes
+                    thelake = gpd.overlay(thelake,extentpoly,how='intersection')        # Clip to extent in correct EPSG, ensure clipped area is correct
+                thelake.to_file("%s/%s_SWOTPLD.shp" %(folders[0],delta))
 
         print('\n[Step 3A][Make_Watermask][Smoothing water and land masks] .......\n')
         print('\n[Step 3A][Make_Watermask][Start with the GEE watermask at 10m resolution] .......\n')
@@ -812,24 +812,36 @@ def more_opening(delta,folders,watermaskname,structure,ref,parameters):
     print('\n\n\n##############################################################################################')
     print('#################################[Step %s][Open Water Mask]####################################' %(step))
     print('##############################################################################################\n')
- 
-    if structure == None:
+    save_profile_xres = ref.profile
+    save_profile_xres['compress'] = 'deflate'
+    xres,yres = int(save_profile_xres['transform'][0]),-int(save_profile_xres['transform'][4])
+    EPSG = parameters['EPSG'][0]                                                # Coordinate System must be UTM
+    ulx  = parameters['ulx'][0]                                                 # ULX coordinate
+    lry  = parameters['lry'][0]                                                 # LRY coordinate
+    lrx  = parameters['lrx'][0]                                                 # LRX coordinate
+    uly  = parameters['uly'][0]
+
+    full_watermask_file = rasterio.open('%s_expanded_10.tif' %(folders[8] / watermaskname))
+    save_profile_10m = full_watermask_file.profile
+    full_watermask = full_watermask_file.read(1)
+
+
+    if structure < 1:
         print('\n[Step 3B][Open_Watermask] Skip .........\n')
+        
+        with rasterio.open('%s_watermask_%s.tif' %(folders[8] / delta,xres),'w', **save_profile_xres) as dst:
+            dst.write_band(1,full_watermask)
+
+        print('\n[Step 3A][Make_Watermask][Make land mask as inverse of water mask] ......\n')
+        full_landmask = np.where(np.isnan(full_watermask),np.nan,np.where(full_watermask==1,-9999,1))
+
+        print('\n[Step 3A][Make_Watermask][Save as final land mask at %sm resolution] ......\n' %(xres))
+        with rasterio.open("%s_landmask_%s.tif" %(folders[8] / delta,xres),'w', **save_profile_xres) as dst:
+            dst.write_band(1,full_landmask.astype('float64'))
+
     else:
         print('\n[Step 3B][Open_Watermask] \n')
         print('If an area has many bridges or narrow channel sections, more opening might be needed')
-        save_profile_xres = ref.profile
-        save_profile_xres['compress'] = 'deflate'
-        xres,yres = int(save_profile_xres['transform'][0]),-int(save_profile_xres['transform'][4])
-        EPSG = parameters['EPSG'][0]                                                # Coordinate System must be UTM
-        ulx  = parameters['ulx'][0]                                                 # ULX coordinate
-        lry  = parameters['lry'][0]                                                 # LRY coordinate
-        lrx  = parameters['lrx'][0]                                                 # LRX coordinate
-        uly  = parameters['uly'][0]
-
-        full_watermask_file = rasterio.open('%s_expanded_10.tif' %(folders[8] / watermaskname))
-        save_profile_10m = full_watermask_file.profile
-        full_watermask = full_watermask_file.read(1)
         full_watermask2 = np.where(full_watermask==1,0,1)
 
         print('binary_opening %sx%s' %(structure,structure))
@@ -927,7 +939,7 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
     print('\n[Step %s][Make_Polygons][Open land/water mask] .......\n' %(step))
     print('##################### Water delineated with %s_%s' %(watermaskname,xres))
     if skip == False:
-        if os.path.isfile('%s_land_%s.shp' %(folders[7] / delta,xres))==False:
+        if os.path.isfile('%s_polygons_lands_%s.shp' %(folders[7] / delta,xres))==False:
             #os.remove('%s%s_watermask.shp' %(folders[7],delta))
             # if os.path.isfile('%s%s_watermask_%s.shp' %(folders[7],delta,xres)):
             #     os.remove('%s%s_watermask_%s.shp' %(folders[7],delta,xres))
@@ -985,7 +997,7 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
 
         ndwi_landmask = gpd.read_file("%s_landmask_%s.shp" %(folders[7] / delta,xres))
         # ndwi_landmask = gpd.overlay(ndwi_landmask,extentpoly,how='intersection')
-        ndwi_landmask['dissolve'] = 1
+        # ndwi_landmask['dissolve'] = 1
 
         ######################################################################
         ## WATER BODIES FOR DELINEATION OF BATHYMETRY ##
@@ -1001,51 +1013,55 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
 
         ## LAKES
         print('\n[Step %s][Make_Polygons][Lakes from Hydropolys Type "Lake" and HydroLAKES] .......\n'%(step))
-        try:lakes = gpd.read_file("%s_lakes_%s.shp" %(folders[7] / delta,xres))
+        # try:lakes = gpd.read_file("%s_polygons_lakes_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        try:
+            lakes = hydro_all.loc[(hydro_all['TYPE'] == 'Lake') | (hydro_all['TYPE_2'] == 'Lake')].reset_index(drop=True)
         except:
-            try:
-                lakes = hydro_all.loc[(hydro_all['TYPE'] == 'Lake') | (hydro_all['TYPE_2'] == 'Lake')].reset_index(drop=True)
-            except:
-                lakes = hydro_all.loc[(hydro_all['TYPE'] == 'Lake')].reset_index(drop=True)
-            lakes.drop(lakes.columns[:-2],inplace=True,axis=1)
-            if len(lakes) <1:
-                print('There are no lakes')
-            else:
-                lakes.to_file("%s_lakes_%s.shp" %(folders[7] / delta,xres)) ## SAVE
-                print('##################### Lake polygons saved to %s%s_lakes_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
+            lakes = hydro_all.loc[(hydro_all['TYPE'] == 'Lake')].reset_index(drop=True)
+        lakes.drop(lakes.columns[:-2],inplace=True,axis=1)
+        if len(lakes) <1:
+            print('There are no lakes')
+        else:
+            lakes.to_file("%s_polygons_lakes_%s.shp" %(folders[7] / delta,xres)) ## SAVE
+            print('##################### Lake polygons saved to %s%s_lakes_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
         # else:
         #     lakes = gpd.overlay(lakes,extentpoly,how='intersection')
         #     lakes.to_file("%s%s_lakes_%s.shp" %(folders[7],delta,xres)) ## SAVE
 
         ## OCEANS
         print('\n[Step %s][Make_Polygons][Oceans from Hydropolys Type Ocean or Sea] .......\n'%(step))
-        try:oceans = gpd.read_file("%s_fulloceans_%s.shp" %(folders[7] / delta,xres))
-        except:
-            oceans = hydro_all.loc[hydro_all['TYPE'] == 'Ocean or Sea'].reset_index(drop=True)
-            oceans.drop(oceans.columns[:-2],inplace=True,axis=1)
-            oceans.geometry = oceans.buffer(200)
-            #oceans = oceans.dissolve(by='dissolve')
+        # try:oceans = gpd.read_file("%s_polygons_fulloceans_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        oceans = hydro_all.loc[hydro_all['TYPE'] == 'Ocean or Sea'].reset_index(drop=True)
+        oceans.drop(oceans.columns[:-2],inplace=True,axis=1)
+        oceans.geometry = oceans.buffer(200)
+        oceans['dissolve'] = 1
+        oceans = oceans.dissolve(by='dissolve')
 
-            oceans = gpd.overlay(oceans,ndwi_landmask,how='difference')
-            oceans = gpd.overlay(oceans,extentpoly,how='intersection')
-            oceans = oceans.dissolve(by='dissolve').reset_index(drop=True)
-            oceans.to_file("%s_fulloceans_%s.shp" %(folders[7] / delta,xres))
+        oceans2 = gpd.overlay(oceans,ndwi_landmask,how='difference')
+        oceans = gpd.overlay(oceans2,extentpoly,how='intersection')
+        # oceans = oceans.dissolve(by='dissolve').reset_index(drop=True)
+        oceans.to_file("%s_polygons_fulloceans_%s.shp" %(folders[7] / delta,xres))
         # else:
         #     oceans = gpd.overlay(oceans,extentpoly,how='intersection')
         #     oceans.to_file("%s%s_fulloceans_%s.shp" %(folders[7],delta,xres))
-        print('##################### Ocean polygons saved to %s%s_fulloceans_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
-        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_fulloceans_%s.shp %s_fulloceans_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
+        print('##################### Ocean polygons saved to %s%s_polygons_fulloceans_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
+        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_polygons_fulloceans_%s.shp %s_polygons_fulloceans_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
 
         ## OCEANS AND LAKES together!
         print('\n[Step %s][Make_Polygons][Ocean and lakes] .......\n'%(step))
-        try: ocean_lake = gpd.read_file("%s_ocean_and_lake_%s.shp" %(folders[7] / delta,xres))
-        except:
-            ocean_lake = gpd.overlay(oceans,lakes,how='union',keep_geom_type=True)
-            #ocean_lake = oceans + lakes
-            ocean_lake['dissolve'] = 1
-            ocean_lake = ocean_lake.dissolve(by='dissolve').reset_index(drop=True)
-            ocean_lake.to_file('%s_ocean_and_lake_%s.shp' %(folders[7] / delta,xres))
-            print('##################### Ocean and lake polygons saved to %s_ocean_lakes_%s.shp' %(folders[7]/delta,xres))
+        # try: ocean_lake = gpd.read_file("%s_polygons_ocean_and_lake_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        ocean_lake = gpd.overlay(oceans,lakes,how='union',keep_geom_type=True)
+        #ocean_lake = oceans + lakes
+        ocean_lake['dissolve'] = 1
+        ocean_lake = ocean_lake.dissolve(by='dissolve').reset_index(drop=True)
+        ocean_lake.to_file('%s_polygons_ocean_and_lake_%s.shp' %(folders[7] / delta,xres))
+        print('##################### Ocean and lake polygons saved to %s_polygons_ocean_lakes_%s.shp' %(folders[7]/delta,xres))
         # else:
         #     ocean_lake = gpd.overlay(ocean_lake,extentpoly,how='intersection')
         #     ocean_lake.to_file('%s%s_ocean_and_lake_%s.shp' %(folders[7],delta,xres))
@@ -1053,65 +1069,69 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
 
         ## CONNECTED WATER, EXCLUDING LAKES
         print('\n[Step %s][Make_Polygons][Find connected water, starting with largest ocean polygon] .......\n'%(step))
-        try:
-            water_connected_not_lakes = gpd.read_file("%s_water_connected_%s.shp" %(folders[7] / delta,xres))
-        except:
-            water_connected_not_lakes = ndwi_watermask.dissolve(by='dissolve')
-            water_connected_not_lakes = water_connected_not_lakes.explode(index_parts=True)
-            water_connected_not_lakes = water_connected_not_lakes.loc[water_connected_not_lakes.area==max(water_connected_not_lakes.area)].copy(deep=True)
-            water_connected_not_lakes = water_connected_not_lakes.dissolve(by='dissolve').reset_index(drop=True)
-            #water_connected_not_lakes = findconnectedwater(watermask_not_lakes)
-            water_connected_not_lakes.to_file("%s_water_connected_%s.shp" %(folders[7] / delta,xres))
-            print('##################### All water connected to ocean polygons saved to %s%s_water_connected_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
+        # try:
+        #     water_connected_not_lakes = gpd.read_file("%s_polygons_water_connected_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        water_connected_not_lakes = ndwi_watermask.dissolve(by='dissolve')
+        water_connected_not_lakes = water_connected_not_lakes.explode(index_parts=True)
+        water_connected_not_lakes = water_connected_not_lakes.loc[water_connected_not_lakes.area==max(water_connected_not_lakes.area)].copy(deep=True)
+        water_connected_not_lakes = water_connected_not_lakes.dissolve(by='dissolve').reset_index(drop=True)
+        #water_connected_not_lakes = findconnectedwater(watermask_not_lakes)
+        water_connected_not_lakes.to_file("%s_polygons_water_connected_%s.shp" %(folders[7] / delta,xres))
+        print('##################### All water connected to ocean polygons saved to %s%s_polygons_water_connected_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
         # else:
         #     water_connected_not_lakes = gpd.overlay(water_connected_not_lakes,extentpoly,how='intersection')
         #     water_connected_not_lakes.to_file("%s%s_water_connected_%s.shp" %(folders[7],delta,xres))
 
         print('\n[Step %s][Make_Polygons][River from water that is not lake or ocean] .......\n'%(step))
-        try:rivers = gpd.read_file("%s_rivers_%s.shp" %(folders[7] / delta,xres))
-        except:
-            rivers = gpd.overlay(water_connected_not_lakes,ocean_lake,how='difference')
-            rivers = rivers.explode(index_parts=True).reset_index(drop=True)
-            rivers = rivers[rivers.geometry.type=='Polygon']
-            rivers= gpd.overlay(rivers,extentpoly,how='intersection')
-            rivers.to_file("%s_rivers_%s.shp" %(folders[7] / delta,xres),crs='EPSG:%s' %(EPSG))
-            print('##################### River polygons saved to %s%s_rivers_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
+        # try:rivers = gpd.read_file("%s_polygons_rivers_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        rivers = gpd.overlay(water_connected_not_lakes,ocean_lake,how='difference')
+        rivers = rivers.explode(index_parts=True).reset_index(drop=True)
+        rivers = rivers[rivers.geometry.type=='Polygon']
+        rivers= gpd.overlay(rivers,extentpoly,how='intersection')
+        rivers.to_file("%s_polygons_rivers_%s.shp" %(folders[7] / delta,xres),crs='EPSG:%s' %(EPSG))
+        print('##################### River polygons saved to %s%s_polygons_rivers_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
         # else:
         #     rivers = gpd.overlay(rivers,extentpoly,how='intersection')
         #     rivers.to_file("%s%s_rivers_%s.shp" %(folders[7],delta,xres))
         #print('##################### River polygons saved to %s%s_rivers.shp' %(folders[7].split(delta)[-1],delta))
-        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_rivers_%s.shp %s_rivers_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
+        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_polygons_rivers_%s.shp %s_rivers_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
 
         ## CONNECTED WATER, ALL
         print('\n[Step %s][Make_Polygons][All water from connected water and lakes] .......\n'%(step))
-        try: allwater = gpd.read_file("%s_water_connected_and_lakes_%s.shp" %(folders[7] / delta,xres))
-        except:
-            allwater = gpd.overlay(ocean_lake,water_connected_not_lakes,how='union',keep_geom_type=True)
-            allwater = allwater.explode(index_parts=True).reset_index(drop=True)
-            allwater.drop(allwater.columns[:-1],inplace=True,axis=1)
-            #allwater.geometry = allwater.buffer(40)
-            #allwater.geometry = allwater.buffer(-40)
-            allwater = gpd.overlay(allwater,extentpoly,how='intersection')
+        # try: allwater = gpd.read_file("%s_polygons_water_connected_and_lakes_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        allwater = gpd.overlay(ocean_lake,water_connected_not_lakes,how='union',keep_geom_type=True)
+        allwater = allwater.explode(index_parts=True).reset_index(drop=True)
+        allwater.drop(allwater.columns[:-1],inplace=True,axis=1)
+        #allwater.geometry = allwater.buffer(40)
+        #allwater.geometry = allwater.buffer(-40)
+        allwater = gpd.overlay(allwater,extentpoly,how='intersection')
         # else:
         #     allwater = gpd.overlay(allwater,extentpoly,how='intersection')
         allwater['dissolve'] = 1
         allwater = allwater.dissolve(by='dissolve').reset_index(drop=True)
-        allwater.to_file('%s_water_connected_and_lakes_%s.shp' %(folders[7] / delta,xres))
-        print('##################### All water polygons saved to %s%s_water_connected_and_lakes_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
+        allwater.to_file('%s_polygons_water_connected_and_lakes_%s.shp' %(folders[7] / delta,xres))
+        print('##################### All water polygons saved to %s%s_polygons_water_connected_and_lakes_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
 
         print('\n[Step %s][Make_Polygons][Land from area that is not water] .......\n'%(step))
-        try:lands = gpd.read_file("%s_lands_%s.shp" %(folders[7] / delta,xres))
-        except:
-            lands = gpd.overlay(extentpoly,allwater,how='difference')
-            lands = lands.explode(index_parts=True).reset_index(drop=True)
-            lands = lands[lands.geometry.type=='Polygon']
+        # try:lands = gpd.read_file("%s_polygons_lands_%s.shp" %(folders[7] / delta,xres))
+        # except:''
+        # else:
+        lands = gpd.overlay(extentpoly,allwater,how='difference')
+        lands = lands.explode(index_parts=True).reset_index(drop=True)
+        lands = lands[lands.geometry.type=='Polygon']
         # else:
         #     lands = gpd.overlay(lands,extentpoly,how='intersection')
         lands.geometery = lands.buffer(0)
         lands['dissolve'] = 1
         lands = lands.dissolve(by='dissolve').reset_index(drop=True)
-        lands.to_file("%s_lands_%s.shp" %(folders[7] / delta,xres))
-        print('##################### Land polygons saved to %s%s_lands_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
+        lands.to_file("%s_polygons_lands_%s.shp" %(folders[7] / delta,xres))
+        print('##################### Land polygons saved to %s%s_polygons_lands_%s.shp' %(str(folders[7]).split(delta)[-1],delta,xres))
 
         # print('[Step 3][Extend river boundary offshore by 1000m] .......')
         # extendedriver = rivers.copy(deep=True)
@@ -1126,10 +1146,10 @@ def make_polygons(delta,folders,parameters,ref,watermaskname,templates_path,skip
         # extendedocean.to_file("%s%s_oceanextended.shp" %(folders[7],delta))
 
         print('##################### Rasterizing land, ocean, lake, and river polygons')
-        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_water_connected_and_lakes_%s.shp %s_water_connected_and_lakes_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
-        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_water_connected_and_lakes_%s.shp %s_water_connected_and_lakes_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
-        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_lands_%s.shp %s_lands_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
-        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_lakes_%s.shp %s_lakes_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
+        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_polygons_water_connected_and_lakes_%s.shp %s_polygons_water_connected_and_lakes_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
+        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_polygons_water_connected_and_lakes_%s.shp %s_polygons_water_connected_and_lakes_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
+        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_polygons_lands_%s.shp %s_lands_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
+        os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s %s_polygons_lakes_%s.shp %s_lakes_%s.tif -co COMPRESS=DEFLATE'  %(xres,yres,ulx,lry,lrx,uly,folders[7]/delta,xres,folders[8]/delta,xres))
         print('\n[Step %s][Make_Polygons] Finished .......\n'%(step))
 
     else:
@@ -1200,7 +1220,7 @@ def make_channel_networks(folders,delta,ref,parameters,pixel_step,skip=False):
     river = rasterio.open('%s_watermask_%s.tif' %(folders[8] / delta,xres))
     rivermask = np.where(river.read(1) ==1,1.,0.)
     print('\n[Step %s][Make_Channel_Networks][Import ocean mask (%sm)] .......\n'%(step,xres))
-    ocean = rasterio.open('%s_fulloceans_%s.tif' %(folders[8] / delta,xres))
+    ocean = rasterio.open('%s_polygons_fulloceans_%s.tif' %(folders[8] / delta,xres))
 
     ##############################################################################
     ####################### Get River Widths and Depths ###########################
@@ -1340,11 +1360,11 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
         elev_name = 'Elevation_ocean-%s_land-%s_above%sm-%s_below%sm-%s_wetland-%s_lakes-%s' %(oceanmethod,landmethod,riverBoundary,upper_rivermethod,riverBoundary,lower_rivermethod,wetlandfile_name,lakefile_name)
     else:
         elev_name = 'Elevation_ocean-%s_land-%s_rivers-%s_wetland-%s_lakes-%s' %(oceanmethod,landmethod,upper_rivermethod,wetlandfile_name,lakefile_name)
-    elevationpath  = folders[4] / elev_name
-    print(elevationpath,elev_name)
+    # elevationpath  = folders[4] 
+    print(elev_name)
     # try: os.remove("%s/%s_%s.tif" %(elevationpath,delta,elev_name))
     # except:''
-    if os.path.isfile("%s_%s_%s.tif" %(elevationpath / delta,elev_name,xres))==False:
+    if os.path.isfile("%s_%s.tif" %(folders[4]/elev_name,xres))==False:
         ###########################################################################
         ###################### Landcover Classification  ##########################
         ###########################################################################
@@ -1360,7 +1380,7 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
         #     os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s -tap %s%s_oceans.shp %s%s_oceans.tif'  %(xres,yres,ulx,lry,lrx,uly,folders[7],delta,folders[1],delta))
         #     os.system('gdal_rasterize -burn 1 -tr %s %s -te %s %s %s %s -tap %s%s_rivers.shp %s%s_rivers.tif'  %(xres,yres,ulx,lry,lrx,uly,folders[7],delta,folders[1],delta))
         print('##################### Loading Ocean, River, Land, and Land Masks ')
-        isocean = rasterio.open('%s_fulloceans_%s.tif'  %(folders[8] / delta,xres)).read(1)
+        isocean = rasterio.open('%s_polygons_fulloceans_%s.tif'  %(folders[8] / delta,xres)).read(1)
         isocean = np.where(isocean ==1,1.,0.)
         #isnearshore = rasterio.open('%s%s_nearshore_%s.tif'  %(folders[8],delta,xres)).read(1)
         #isnearshore = np.where(isnearshore ==1,1.,0.)
@@ -1999,7 +2019,7 @@ def set_boundary_conditions(delta,folders,res,parameters,elev_name):
 
         ##############################################################################
         ##############################################################################
-        oceans = gpd.read_file("%s_fulloceans_%s.shp" %(folders[7]/delta,xres))
+        oceans = gpd.read_file("%s_polygons_fulloceans_%s.shp" %(folders[7]/delta,xres))
         oceans = oceans.to_crs(df_line.crs)
         oceanboundary = gpd.overlay(df_line,oceans,how='intersection')
         oceanboundary['mean'] = pd.DataFrame(zonal_stats(vectors = oceanboundary['geometry'],raster = "%s/%s_%s_%s.tif" %(folders[4] + elev_name,delta,elev_name,xres),stats='mean',nodata = '-9999'))['mean']

@@ -66,13 +66,20 @@ def maketides(LAT,LON,startdate,enddate,freq):
     #     model_directory,grid_file,model_files, TYPE=TYPE, GZIP=True,METHOD=METHOD,
     #     SCALE=SCALE)
 
-    amp,ph,D,c = extract_netcdf_constants(np.array([LON]), np.array([LAT]),
-        grid_file,model_files,
-        TYPE=TYPE, GZIP=True,METHOD=METHOD,
-        SCALE=SCALE)
+    # amp,ph,D,c = extract_netcdf_constants(np.array([LON]), np.array([LAT]),
+    #     grid_file,model_files,
+    #     TYPE=TYPE, GZIP=True,METHOD=METHOD,
+    #     SCALE=SCALE)
+    # deltat = np.zeros_like(TIME)
+
+    amp,ph,D,c = pyTMD.io.ATLAS.extract_constants(LON, LAT, grid_file,
+        model_files, type=TYPE, method=METHOD,scale=SCALE)
+        # extrapolate=EXTRAPOLATE, cutoff=CUTOFF, ,
+        # compressed=model.compressed)
+    # use delta time at 2000.0 to match TMD outputs
     deltat = np.zeros_like(TIME)
-
-
+    
+    
     #-- calculate complex phase in radians for Euler's
     cph = -1j*ph*np.pi/180.0
     #-- calculate constituent oscillation
@@ -80,16 +87,24 @@ def maketides(LAT,LON,startdate,enddate,freq):
 
     #-- convert time from MJD to days relative to Jan 1, 1992 (48622 MJD)
     #-- predict tidal elevations at time 1 and infer minor corrections
-    TIDE = predict_tidal_ts(TIME, hc, c,
-        DELTAT=deltat, CORRECTIONS=model_format)
-    MINOR = infer_minor_corrections(TIME, hc, c,
-        DELTAT=deltat, CORRECTIONS=model_format)
+    # TIDE = predict_tidal_ts(TIME, hc, c,
+    #     DELTAT=deltat, CORRECTIONS=model_format)
+    # MINOR = infer_minor_corrections(TIME, hc, c,
+    #     DELTAT=deltat, CORRECTIONS=model_format)
+    # TIDE.data[:] += MINOR.data[:]
+    # #-- convert to centimeters
+    # TIDE.data[:] *= 100.0
+
+    TIDE = pyTMD.predict.time_series(TIME, hc, c,
+        deltat=deltat, corrections=model_format)
+    MINOR = pyTMD.predict.infer_minor(TIME, hc, c,
+        deltat=deltat, corrections=model_format)
     TIDE.data[:] += MINOR.data[:]
     #-- convert to centimeters
     TIDE.data[:] *= 100.0
-
+    
     #-- differentiate to calculate high and low tides
-    diff = np.zeros_like(TIME, dtype=np.float)
+    diff = np.zeros_like(TIME, dtype=float)
     #-- forward differentiation for starting point
     diff[0] = TIDE.data[1] - TIDE.data[0]
     #-- backward differentiation for end point

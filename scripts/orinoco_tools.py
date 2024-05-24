@@ -36,7 +36,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 import geopandas as gpd
 import os
-
+from osgeo import ogr, osr
 import warnings
 warnings.filterwarnings('ignore', '.*do not.*', )
 warnings.warn('ShapelyDeprecationWarning')
@@ -99,7 +99,7 @@ def make_distance(water,ocean,folders,delta,pixel_step):
     ## Polygonize the segment
     print('\n######[Make_Channel_Networks][Orinoco --> segment raster to shapefile] .......\n')
     ## os.system('gdal_polygonize.py %s_segments_%sx%s.tif %s_segments_%sx%s.shp' %(folders[8]/delta,xres,pixel_step,folders[7]/delta,xres,pixel_step))
-    from osgeo import ogr, osr
+
     sourceRaster = gdal.Open('%s_segments_%sx%s.tif' %(folders[8]/delta,xres,pixel_step))
     srcband = sourceRaster.GetRasterBand(1)
     driver = ogr.GetDriverByName("ESRI Shapefile")
@@ -204,8 +204,8 @@ def make_distance(water,ocean,folders,delta,pixel_step):
     # random.choice(list(node_data.items()))
 
     df_segments = get_segment_df(segments, chanG, profile,8)
-    df_segments2 = df_segments.copy(deep=True)
-    df_segments2.geometry = df_segments2.buffer(0)
+    # df_segments2 = df_segments.copy(deep=True)
+    # df_segments2.geometry = df_segments2.buffer(0)
 
     # df_segments_out = split_tuple_pairs(df_segments2)
     # df_segments_out.to_file('%s%s_df_segments%sx%s.geojson' %(folders[7],delta,xres,pixel_step), driver='GeoJSON')
@@ -214,7 +214,8 @@ def make_distance(water,ocean,folders,delta,pixel_step):
     df_geo_widths = get_geo_width_df(df_segments,
                                       chanG,
                                       # How many hops to permit in our neighborhood
-                                      radius=2)
+                                      radius=2,
+                                      geo_corrections =False)
     df_geo_widths_out = split_tuple_pairs(df_geo_widths)
     #df_geo_widths_out.to_file('%s%s_width_segments_%s.shp' %(folders[6],delta,round(pixel_step*xres)), driver='ESRI Shapefile')
 
