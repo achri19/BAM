@@ -7,7 +7,8 @@ This repository contains Python scripts for building and running open-source hyd
 
 Use the BAM.yml file to set up a conda environment with requried packages:
 ```diff
-- conda env create -f BAM.yml 
+- conda env create -f BAM.yml
+- python -m ipykernel install --user --name=BAM
 ```
 
 If the installation stalls at "Solving Environment", we recommend using Mamba (https://github.com/mamba-org/mamba) to build the environment. From base environment:
