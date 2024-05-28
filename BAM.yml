@@ -28,6 +28,7 @@ dependencies:
   - lxml
   - gdal
   - jupyter
+  - ipykernel
   - cython
   - mpi4py
   - cgal
