@@ -1878,7 +1878,7 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
     else:
         print('\n[Step %s][Make_Model_Foundation] SKIP.......\n'%(step))
         #elevationpath  = folders[4] + elev_name
-        elevation2 = rasterio.open('%s_%s.tif' %(folders[3]/elev_name,xres)).read(1)
+        elevation2 = rasterio.open('%s_%s.tif' %(folders[4]/elev_name,xres)).read(1)
 
         # fig, ax, = plt.subplots(ncols=1, figsize=[10,10],facecolor = 'w', edgecolor = 'k')
         # plt.imshow(elevation2)
