@@ -70,15 +70,23 @@ Summary: This notebook will walk through the process of installing packages, con
 
 ### Tutorial 1: Download Ancillary Data
 Summary: This notebook will ensure you have the ancillary data needed to run the notebooks<br></br>
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Downloading_Data.ipynb)<br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/1_Downloading_Data.ipynb)<br></br>
 
 ### Tutorial 2: Build Model Files
 Summary: This notebook will walk through steps to build a digital elevation for the study area using open-source/publicly available datasets.<br></br>
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Build_Model_Files.ipynb) <br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/2_Build_Model_Files.ipynb) <br></br>
 
-### Tutorial 3: Run ANUGA Model
+### Tutorial 3: Get Boundary Conditions
+Summary: This notebook will walk through steps to set tide boundary and river inlet boundary. These require shapefiles defining boundaries and you must have pyTMD and TPXO models installed. <br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/3_Get_Boundaries.ipynb) <br></br>
+
+### Tutorial 4: Build Mesh
+Summary: This notebook will walk through steps to build a uniform triangular mesh.<br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/4_Build_MESH.ipynb) <br></br>
+
+### Tutorial 5: Run ANUGA Model
 Summary: This notebook will setup and run an ANUGA simulation. All files required for the simulation are provided.<br></br>
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/Run_ANUGA.ipynb) <br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/5_Run_ANUGA.ipynb) <br></br>
 
 ## Issues
 If you have issues running the code or questions, please open an issue through GitHub explaining the steps to replicate your issue and the exact errors that you're seeing.
