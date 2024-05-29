@@ -70,7 +70,7 @@ Summary: This notebook will walk through the process of installing packages, con
 
 ### Tutorial 1: Download Ancillary Data
 Summary: This notebook will ensure you have the ancillary data needed to run the notebooks<br></br>
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/1_Downloading_Data.ipynb)<br></br>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/achri19/BAM/blob/main/notebooks/1_Downloading_AncillaryData.ipynb)<br></br>
 
 ### Tutorial 2: Build Model Files
 Summary: This notebook will walk through steps to build a digital elevation for the study area using open-source/publicly available datasets.<br></br>
