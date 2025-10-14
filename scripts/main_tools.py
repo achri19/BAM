@@ -46,7 +46,6 @@ sys.path.insert(1, code_path)
 from polygon_tools import findconnectedwater
 from download_tools import download_NASADEM2
 from orinoco_tools import make_distance
-from tide_tools import maketides
 ##############################################################################
 ##############################################################################
 ##############################################################################
@@ -1548,7 +1547,7 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
             elif upper_rivermethod == 'wdpower':
                 coeff_a = parameters['WD_POWERA_upper'][0].astype('float64')
                 coeff_b = parameters['WD_POWERB_upper'][0].astype('float64')
-                print('##################### Upper river depth is determined with a power law relationship: depth = %s*width^%s' %(coeff_a,coeff_b))#'Depth = %s*Width + %s based on Andreadis et al. 2013' %(slope,intercept))
+                print('##################### Upper river depth is determined with a power law relationship: depth = %s*width^%s +6 ' %(coeff_a,coeff_b))#'Depth = %s*Width + %s based on Andreadis et al. 2013' %(slope,intercept))
                 maxdepths = np.where(upper==1,np.where(widths<max_river_width,(coeff_a)*(widths**coeff_b),(coeff_a)*(max_river_width**coeff_b)),np.nan)
             elif upper_rivermethod == 'distanceslope':
                 bedslope = parameters['BEDSLOPE_upper'].astype('float64')[0]
@@ -1582,7 +1581,7 @@ def make_model_foundation(path,parameters,delta,folders,ref,distance,widths,wate
                 except AttributeError:
                     print('File not found \n')
                     upper_rivermethod = input('What file would you like to use for the upper river elevation? Should be saved in /User_Defined_Files subfolder ')
-                riverbathy = gdal.Open("%s_upperriver.tif" %(folders[2]/upper_rivermethod)).ReadAsArray()
+                riverbathy = gdal.Open("%s.tif" %(folders[2]/upper_rivermethod)).ReadAsArray()
                 #upper_river_elev =np.where(upper==1,np.where((abs(riverbathy)<abs(max_river_depth)) & (riverbathy<-0.9),riverbathy,np.nan),0)
                 upper_river_elev =np.where(upper==1,riverbathy,0)
                 break

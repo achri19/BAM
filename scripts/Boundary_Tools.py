@@ -25,13 +25,6 @@ import warnings
 #from terracatalogueclient import Catalogue
 from tqdm.auto import tqdm  # provides a progressbar
 
-import sys
-if os.getcwd().split('/')[1] == 'Users':
-    code_path = '/users/alchrist/documents/github/BAM/scripts/'
-else:
-    code_path = '/scratch_lg/loac_hydro/alchrist/code'
-sys.path.insert(1, code_path)
-from tide_tools import maketides
 
 ############################################################################
 ############################################################################
@@ -272,9 +265,9 @@ def get_tidal_boundary(delta,folders,res,parameters,tide_bnd,tidey,tidex):
     df_line['boundary'] = ['NonTidal'] * (len(df_line))
     df_line.to_file('test.shp')
     if len(tide_bnd) > 0:
-        df_line_tide = gpd.sjoin(df_line,tide_bnd, how='inner', op='within')
-        df_line_tide['id_left'].values
-        df_line['boundary'][df_line_tide['id_left'].values] = 'Tide'
+        df_line_tide = gpd.sjoin(df_line,tide_bnd, how='inner', predicate='within')
+        df_line_tide['index'].values
+        df_line['boundary'][df_line_tide['index'].values] = 'Tide'
     else:
         df_line['mean'] = pd.DataFrame(zonal_stats(vectors = df_line['geometry'],raster = "%s/%s_bathy_%s.tif" %(folders[8],delta,xres),stats='mean',nodata = '-9999'))['mean']
         print('\n[Step %s][Set_Boundary_Conditions][Deepest model side = downstream boundary, tidal conditions] .......\n'%(step))
@@ -291,30 +284,3 @@ def get_tidal_boundary(delta,folders,res,parameters,tide_bnd,tidey,tidex):
 
     return df_line,round(tidex,2),round(tidey,2)
 
-
-def get_tide_data_pytmd(delta,path,tidex,tidey):
-    step = '9'
-    if tidex < 0:
-        tidex = 360+tidex
-    ## Get Tide Data
-    ## Run pyTMD to get global tidal predictions
-    ## Set downstream boundary conditions
-    ##############################################################################
-    ##############################################################################
-    ##############################################################################
-    print('\n[Step %s][Set_Boundary_Conditions][Set model run period] .......\n'%(step))
-    startdate = '20100101'
-    enddate = '20251001'
-    print('##################### Default simulation start and end are %s - %s' %(startdate, enddate))
-    print('\n[Step %s][Set_Boundary_Conditions][Get water stage time series from TPXO Global Tide Model] .......\n'%(step))
-
-    try:
-        tide_data = np.genfromtxt("%s/%s_tides_lat%s_lon%s_%s.csv" %(path,delta,np.round(tidey,2),np.round(tidex,2),startdate),delimiter=',')
-    except:
-        tide_data = np.column_stack((maketides(float(tidey),float(tidex),str(startdate),str(enddate),10)))# value every 10 minutes
-        np.savetxt("%s/%s_tides_lat%s_lon%s_%s.csv" %(path,delta,np.round(tidey,2),np.round(tidex,2),startdate),tide_data,delimiter=',')
-    print('##################### Using tide data from file: %s_tides_lat%s_lon%s_%s.csv' %(delta,np.round(tidey,2),np.round(tidex,2),startdate))
-
-    print('\n[Step %s][Set_Boundary_Conditions] Finished .......\n'%(step))
-
-    return tide_data
